@@ -48,6 +48,7 @@ export function FlightBoard({
             <th className="py-4 px-2 font-medium">Giờ đi</th>
             <th className="py-4 px-2 font-medium">Giờ đến</th>
             <th className="py-4 px-2 font-medium">Trạng thái</th>
+            <th className="py-4 px-2 font-medium">Loại</th>
             <th className="py-4 px-2 font-medium">Nhà ga</th>
             <th className="py-4 px-2 font-medium text-right">Cửa</th>
           </tr>
