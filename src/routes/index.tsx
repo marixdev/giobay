@@ -70,11 +70,3 @@ function Home() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-1">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-      <p className="font-display italic text-4xl md:text-5xl leading-none">{value}</p>
-    </div>
-  );
-}
