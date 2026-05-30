@@ -40,7 +40,7 @@ export type FlightRow = {
 };
 
 type Direction = "departure" | "arrival";
-type SourceTag = "airlabs" | "aviationstack" | "live" | "mock";
+type SourceTag = "acv" | "airlabs" | "aviationstack" | "live" | "mock";
 
 function statusVi(s: string): string {
   const m: Record<string, string> = {
@@ -500,18 +500,26 @@ export const getFlights = createServerFn({ method: "GET" })
     if (cached) return cached;
 
     let result: { rows: FlightRow[]; source: SourceTag };
-    const airlabs = await fetchAirLabs(data.direction, iata);
-    if (airlabs && airlabs.length > 0) {
-      result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
+    // 1) ACV (vietnamairport.vn) — chính xác, real-time cho sân bay VN
+    const acv = await fetchACV(data.direction, iata);
+    if (acv && acv.length > 0) {
+      result = { rows: mapACV(acv, data.direction, iata), source: "acv" };
     } else {
-      const params: Record<string, string> = {};
-      if (data.direction === "departure") params.dep_iata = iata;
-      else params.arr_iata = iata;
-      const live = await fetchAviationStack(params);
-      if (live && live.length > 0) {
-        result = { rows: mapAviationStack(live, data.direction), source: "aviationstack" };
+      // 2) AirLabs fallback
+      const airlabs = await fetchAirLabs(data.direction, iata);
+      if (airlabs && airlabs.length > 0) {
+        result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
       } else {
-        result = { rows: generateMock(iata, data.direction), source: "mock" };
+        // 3) AviationStack fallback
+        const params: Record<string, string> = {};
+        if (data.direction === "departure") params.dep_iata = iata;
+        else params.arr_iata = iata;
+        const live = await fetchAviationStack(params);
+        if (live && live.length > 0) {
+          result = { rows: mapAviationStack(live, data.direction), source: "aviationstack" };
+        } else {
+          result = { rows: generateMock(iata, data.direction), source: "mock" };
+        }
       }
     }
     setCached(cacheKey, result);
