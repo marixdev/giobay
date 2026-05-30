@@ -57,8 +57,7 @@ function LiveMap({ aircraft }: { aircraft: Array<{ icao24: string; callsign: str
     Promise.all([
       import("leaflet"),
       import("react-leaflet"),
-      // @ts-expect-error css side-effect import
-      import("leaflet/dist/leaflet.css"),
+      import("leaflet/dist/leaflet.css" as string),
     ]).then(([L, RL]) => {
       if (!cancelled) setMods({ L, RL });
     });
