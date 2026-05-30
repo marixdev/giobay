@@ -103,7 +103,11 @@ function AirportPage() {
         <div className="flex gap-4 items-center">
           <span className="text-[10px] font-mono text-accent">● TRỰC TIẾP</span>
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-            {data.source === "live" ? "Nguồn: AviationStack" : "Nguồn: Dữ liệu mẫu"}
+            {data.source === "airlabs"
+              ? "Nguồn: AirLabs"
+              : data.source === "aviationstack" || data.source === "live"
+                ? "Nguồn: AviationStack"
+                : "Nguồn: Dữ liệu mẫu"}
           </span>
           <button
             onClick={() => refetch()}
