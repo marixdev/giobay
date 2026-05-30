@@ -45,6 +45,7 @@ function AirportPage() {
   const { airport } = Route.useLoaderData();
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [terminal, setTerminal] = useState<string>("ALL");
+  const [flightType, setFlightType] = useState<"ALL" | "domestic" | "international">("ALL");
   const { data, isFetching, refetch } = useSuspenseQuery(flightsQO(airport.iata, direction));
   const router = useRouter();
   // Re-trigger loader when params change
@@ -55,7 +56,11 @@ function AirportPage() {
   const terminals = Array.from(
     new Set(data.rows.map((r) => r.terminal).filter((t): t is string => !!t)),
   ).sort();
-  const filteredRows = terminal === "ALL" ? data.rows : data.rows.filter((r) => r.terminal === terminal);
+  const filteredRows = data.rows.filter((r) => {
+    if (terminal !== "ALL" && r.terminal !== terminal) return false;
+    if (flightType !== "ALL" && r.type !== flightType) return false;
+    return true;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
