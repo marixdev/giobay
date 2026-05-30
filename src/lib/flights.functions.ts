@@ -289,8 +289,13 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       ? toIso(r.dep_actual_utc, r.dep_actual)
       : toIso(r.arr_actual_utc, r.arr_actual);
     const delay = r.delayed ?? 0;
-    const baseStatus = statusVi(r.status ?? "scheduled");
-    const status = delay > 0 && r.status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
+    const status = inferStatus(
+      r.status ?? "scheduled",
+      direction,
+      { scheduled: depScheduled ?? null, estimated: depEstimated ?? null, actual: toIso(r.dep_actual_utc, r.dep_actual) },
+      { scheduled: arrScheduled ?? null, estimated: arrEstimated ?? null, actual: toIso(r.arr_actual_utc, r.arr_actual) },
+      delay,
+    );
     const airlineIata = r.airline_iata ?? "";
     const depScheduled = toIso(r.dep_time_utc, r.dep_time);
     const depEstimated = toIso(r.dep_estimated_utc, r.dep_estimated);
