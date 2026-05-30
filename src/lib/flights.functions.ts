@@ -289,18 +289,20 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       ? toIso(r.dep_actual_utc, r.dep_actual)
       : toIso(r.arr_actual_utc, r.arr_actual);
     const delay = r.delayed ?? 0;
-    const status = inferStatus(
-      r.status ?? "scheduled",
-      direction,
-      { scheduled: depScheduled ?? null, estimated: depEstimated ?? null, actual: toIso(r.dep_actual_utc, r.dep_actual) },
-      { scheduled: arrScheduled ?? null, estimated: arrEstimated ?? null, actual: toIso(r.arr_actual_utc, r.arr_actual) },
-      delay,
-    );
     const airlineIata = r.airline_iata ?? "";
     const depScheduled = toIso(r.dep_time_utc, r.dep_time);
     const depEstimated = toIso(r.dep_estimated_utc, r.dep_estimated);
+    const depActual = toIso(r.dep_actual_utc, r.dep_actual);
     const arrScheduled = toIso(r.arr_time_utc, r.arr_time);
     const arrEstimated = toIso(r.arr_estimated_utc, r.arr_estimated);
+    const arrActual = toIso(r.arr_actual_utc, r.arr_actual);
+    const status = inferStatus(
+      r.status ?? "scheduled",
+      direction,
+      { scheduled: depScheduled, estimated: depEstimated, actual: depActual },
+      { scheduled: arrScheduled, estimated: arrEstimated, actual: arrActual },
+      delay,
+    );
     return {
       flight_iata: r.flight_iata ?? `${airlineIata}${r.flight_number ?? ""}`,
       flight_number: r.flight_number ?? "",
