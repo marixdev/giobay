@@ -5,7 +5,7 @@ import { findAirport, VN_AIRPORTS, VN_BBOX } from "./airports";
 
 /** Server-side cache (per-worker, in-memory). */
 const cache = new Map<string, { at: number; data: unknown }>();
-const CACHE_TTL = 300_000; // 5 minutes — preserve AirLabs free quota
+const CACHE_TTL = 120_000; // 2 phút — đủ tươi cho lịch bay, vẫn giảm tải nguồn
 
 function getCached<T>(key: string): T | undefined {
   const hit = cache.get(key);
@@ -258,6 +258,7 @@ const AIRLINE_NAMES: Record<string, string> = {
   VU: "Vietravel Airlines",
   BL: "Pacific Airlines",
 };
+
 
 function toIso(utc: string | null | undefined, local: string | null | undefined): string | null {
   const v = utc || local;
