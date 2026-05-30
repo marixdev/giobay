@@ -9,38 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StatsRouteImport } from './routes/stats'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FlightsNumberRouteImport } from './routes/flights.$number'
+import { Route as AirportsCodeRouteImport } from './routes/airports.$code'
 
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FlightsNumberRoute = FlightsNumberRouteImport.update({
+  id: '/flights/$number',
+  path: '/flights/$number',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AirportsCodeRoute = AirportsCodeRouteImport.update({
+  id: '/airports/$code',
+  path: '/airports/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/map': typeof MapRoute
+  '/stats': typeof StatsRoute
+  '/airports/$code': typeof AirportsCodeRoute
+  '/flights/$number': typeof FlightsNumberRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/map': typeof MapRoute
+  '/stats': typeof StatsRoute
+  '/airports/$code': typeof AirportsCodeRoute
+  '/flights/$number': typeof FlightsNumberRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/map': typeof MapRoute
+  '/stats': typeof StatsRoute
+  '/airports/$code': typeof AirportsCodeRoute
+  '/flights/$number': typeof FlightsNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/map' | '/stats' | '/airports/$code' | '/flights/$number'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/map' | '/stats' | '/airports/$code' | '/flights/$number'
+  id:
+    | '__root__'
+    | '/'
+    | '/map'
+    | '/stats'
+    | '/airports/$code'
+    | '/flights/$number'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MapRoute: typeof MapRoute
+  StatsRoute: typeof StatsRoute
+  AirportsCodeRoute: typeof AirportsCodeRoute
+  FlightsNumberRoute: typeof FlightsNumberRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +108,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/flights/$number': {
+      id: '/flights/$number'
+      path: '/flights/$number'
+      fullPath: '/flights/$number'
+      preLoaderRoute: typeof FlightsNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/airports/$code': {
+      id: '/airports/$code'
+      path: '/airports/$code'
+      fullPath: '/airports/$code'
+      preLoaderRoute: typeof AirportsCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MapRoute: MapRoute,
+  StatsRoute: StatsRoute,
+  AirportsCodeRoute: AirportsCodeRoute,
+  FlightsNumberRoute: FlightsNumberRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
