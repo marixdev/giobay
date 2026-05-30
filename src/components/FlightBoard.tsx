@@ -77,6 +77,9 @@ export function FlightBoard({
                     {r.status}
                   </span>
                 </td>
+                <td className="py-4 px-2 text-muted-foreground">
+                  {r.type === "domestic" ? "Nội địa" : "Quốc tế"}
+                </td>
                 <td className="py-4 px-2 text-muted-foreground">{r.terminal ?? "—"}</td>
                 <td className="py-4 px-2 text-right">{r.gate ?? "—"}</td>
               </tr>
