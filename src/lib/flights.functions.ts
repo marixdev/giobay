@@ -16,6 +16,8 @@ function setCached(key: string, data: unknown) {
   cache.set(key, { at: Date.now(), data });
 }
 
+export type FlightType = "domestic" | "international";
+
 export type FlightRow = {
   flight_iata: string;
   flight_number: string;
@@ -34,6 +36,7 @@ export type FlightRow = {
   gate: string | null;
   terminal: string | null;
   delay_minutes: number | null;
+  type: FlightType;
 };
 
 type Direction = "departure" | "arrival";
