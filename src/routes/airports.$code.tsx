@@ -130,6 +130,40 @@ function AirportPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 mb-3 px-2">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Loại:</span>
+        <button
+          onClick={() => setFlightType("ALL")}
+          className={
+            flightType === "ALL"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Tất cả
+        </button>
+        <button
+          onClick={() => setFlightType("domestic")}
+          className={
+            flightType === "domestic"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Nội địa
+        </button>
+        <button
+          onClick={() => setFlightType("international")}
+          className={
+            flightType === "international"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Quốc tế
+        </button>
+      </div>
+
       {terminals.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 mb-4 px-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Nhà ga:</span>
