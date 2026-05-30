@@ -51,12 +51,30 @@ function MapPage() {
 }
 
 function LiveMap({ aircraft }: { aircraft: Array<{ icao24: string; callsign: string | null; lat: number; lon: number; heading: number | null; alt_m: number | null }> }) {
-  // Client-only require to avoid SSR window access
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const L = require("leaflet") as typeof import("leaflet");
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const RL = require("react-leaflet") as typeof import("react-leaflet");
-  require("leaflet/dist/leaflet.css");
+  const [mods, setMods] = useState<null | { L: typeof import("leaflet"); RL: typeof import("react-leaflet") }>(null);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      import("leaflet"),
+      import("react-leaflet"),
+      // @ts-expect-error css side-effect import
+      import("leaflet/dist/leaflet.css"),
+    ]).then(([L, RL]) => {
+      if (!cancelled) setMods({ L, RL });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!mods) {
+    return (
+      <div className="w-full h-full grid place-items-center font-mono text-xs text-muted-foreground">
+        Đang tải bản đồ…
+      </div>
+    );
+  }
+  const { L, RL } = mods;
 
   const planeIcon = (heading: number) =>
     L.divIcon({
