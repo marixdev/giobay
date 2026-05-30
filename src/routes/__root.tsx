@@ -11,6 +11,13 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import "@fontsource/playfair-display/400-italic.css";
+import "@fontsource/playfair-display/700-italic.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
 
 function NotFoundComponent() {
   return (
@@ -77,11 +84,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Bay Live — Theo dõi chuyến bay các sân bay Việt Nam" },
+      { name: "description", content: "Bảng giờ đến/đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho các sân bay Việt Nam." },
+      { name: "author", content: "Bay Live" },
+      { property: "og:title", content: "Bay Live — Theo dõi chuyến bay sân bay Việt Nam" },
+      { property: "og:description", content: "FIDS trực tiếp cho SGN, HAN, DAD và toàn bộ sân bay Việt Nam." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -118,8 +125,69 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <SiteShell>
+        <Outlet />
+      </SiteShell>
     </QueryClientProvider>
+  );
+}
+
+function SiteShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <SiteHeader />
+      <main className="flex-1 pb-16">{children}</main>
+      <SiteTicker />
+    </div>
+  );
+}
+
+function SiteHeader() {
+  return (
+    <header className="border-b border-foreground/15 bg-background/80 backdrop-blur sticky top-0 z-40">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-wrap items-baseline justify-between gap-4">
+        <Link to="/" className="flex items-baseline gap-2">
+          <span className="font-display italic text-2xl md:text-3xl leading-none">Bay Live</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">VN · FIDS</span>
+        </Link>
+        <nav className="flex flex-wrap items-center gap-1 font-mono text-[11px] uppercase tracking-wider">
+          <NavItem to="/">Trang chủ</NavItem>
+          <NavItem to="/airports/SGN">Sân bay</NavItem>
+          <NavItem to="/map">Bản đồ</NavItem>
+          <NavItem to="/stats">Thống kê</NavItem>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function NavItem({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="px-3 py-1.5 rounded-full hover:bg-foreground/5 transition-colors"
+      activeProps={{ className: "px-3 py-1.5 rounded-full bg-foreground text-background" }}
+      activeOptions={{ exact: to === "/" }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SiteTicker() {
+  const items = [
+    "Dữ liệu cập nhật mỗi 60 giây từ AviationStack và OpenSky Network",
+    "Bay Live theo dõi 19 sân bay dân dụng tại Việt Nam",
+    "Bấm vào số hiệu chuyến bay để xem chi tiết hành trình",
+    "Bản đồ realtime hiển thị máy bay đang bay trong vùng FIR Hồ Chí Minh và Hà Nội",
+  ];
+  const line = items.join("  ●  ");
+  return (
+    <footer className="fixed bottom-0 left-0 w-full bg-foreground text-background py-1.5 overflow-hidden z-30">
+      <div className="flex whitespace-nowrap gap-12 font-mono text-[10px] uppercase tracking-[0.25em] animate-ticker">
+        <span className="pl-8">{line}</span>
+        <span>{line}</span>
+      </div>
+    </footer>
   );
 }
