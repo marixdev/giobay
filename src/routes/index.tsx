@@ -73,7 +73,6 @@ function Home() {
               </Link>
             ))}
           </div>
-        </div>
       </section>
     </div>
   );
