@@ -1,16 +1,8 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AirportChips } from "@/components/AirportChips";
 import { FlightSearch } from "@/components/FlightSearch";
 import { VN_AIRPORTS } from "@/lib/airports";
-import { getStats } from "@/lib/flights.functions";
-
-const statsQO = queryOptions({
-  queryKey: ["stats"],
-  queryFn: () => getStats(),
-  staleTime: 60_000,
-});
 
 export const Route = createFileRoute("/")({
   head: () => ({
