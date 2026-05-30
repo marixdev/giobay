@@ -18,7 +18,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const { data: stats } = useSuspenseQuery(statsQO);
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
       <section className="border-b border-foreground pb-12 mb-12">
