@@ -5,7 +5,7 @@ import { VN_AIRPORTS, VN_BBOX } from "./airports";
 
 /** Server-side cache (per-worker, in-memory). */
 const cache = new Map<string, { at: number; data: unknown }>();
-const CACHE_TTL = 60_000;
+const CACHE_TTL = 300_000; // 5 minutes — preserve AirLabs free quota
 
 function getCached<T>(key: string): T | undefined {
   const hit = cache.get(key);
