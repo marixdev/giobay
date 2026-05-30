@@ -155,6 +155,7 @@ function generateMock(iata: string, direction: Direction): FlightRow[] {
       gate: cancelled ? null : ["A01", "B04", "C12", "D08", "G15"][i % 5],
       terminal: i % 2 === 0 ? "T1" : "T2",
       delay_minutes: delay || null,
+      type: computeFlightType(direction === "departure" ? iata : other.iata, direction === "departure" ? other.iata : iata),
     });
   }
   return rows;
@@ -217,6 +218,7 @@ function mapAviationStack(rows: AviationStackFlight[], direction: Direction): Fl
       gate: side?.gate ?? null,
       terminal: side?.terminal ?? null,
       delay_minutes: delay || null,
+      type: computeFlightType(r.departure?.iata ?? "", r.arrival?.iata ?? ""),
     };
   });
 }
@@ -330,6 +332,7 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       gate: (isDep ? r.dep_gate : r.arr_gate) ?? null,
       terminal: (isDep ? r.dep_terminal : r.arr_terminal) ?? null,
       delay_minutes: delay || null,
+      type: computeFlightType(r.dep_iata ?? "", r.arr_iata ?? ""),
     };
   });
 }
