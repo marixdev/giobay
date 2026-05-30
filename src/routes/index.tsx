@@ -1,16 +1,8 @@
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AirportChips } from "@/components/AirportChips";
 import { FlightSearch } from "@/components/FlightSearch";
 import { VN_AIRPORTS } from "@/lib/airports";
-import { getStats } from "@/lib/flights.functions";
-
-const statsQO = queryOptions({
-  queryKey: ["stats"],
-  queryFn: () => getStats(),
-  staleTime: 60_000,
-});
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,12 +13,11 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Theo dõi lịch trình chuyến bay tại các sân bay Việt Nam theo thời gian thực." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(statsQO),
+  
   component: Home,
 });
 
 function Home() {
-  const { data: stats } = useSuspenseQuery(statsQO);
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
       <section className="border-b border-foreground pb-12 mb-12">
@@ -47,14 +38,8 @@ function Home() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-        <div className="lg:col-span-3 space-y-8">
-          <Stat label="Chuyến bay hôm nay" value={stats.totalToday.toLocaleString("vi-VN")} />
-          <Stat label="Tỉ lệ đúng giờ" value={`${stats.avgOnTime}%`} />
-          <Stat label="Sân bay theo dõi" value={String(VN_AIRPORTS.length)} />
-        </div>
-
-        <div className="lg:col-span-9">
+      <section className="mb-16">
+        <div>
           <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border pb-2 mb-6">
             Chọn sân bay để xem bảng giờ
           </h2>
@@ -85,11 +70,3 @@ function Home() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-1">
-      <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{label}</p>
-      <p className="font-display italic text-4xl md:text-5xl leading-none">{value}</p>
-    </div>
-  );
-}
