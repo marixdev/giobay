@@ -43,12 +43,59 @@ function statusVi(s: string): string {
   const m: Record<string, string> = {
     scheduled: "Dự kiến",
     active: "Đang bay",
+    en_route: "Đang bay",
+    "en-route": "Đang bay",
+    departed: "Đã khởi hành",
     landed: "Đã hạ cánh",
+    arrived: "Đã hạ cánh",
     cancelled: "Hủy chuyến",
+    canceled: "Hủy chuyến",
     incident: "Sự cố",
     diverted: "Chuyển hướng",
+    unknown: "Chưa rõ",
   };
   return m[s] ?? s;
+}
+
+/**
+ * AirLabs /schedules thường giữ status="scheduled" kể cả khi cửa đã đóng /
+ * tàu bay đã rời sân. Suy luận trạng thái thực tế dựa trên mốc thời gian.
+ */
+function inferStatus(
+  rawStatus: string,
+  direction: Direction,
+  dep: { scheduled: string | null; estimated: string | null; actual: string | null },
+  arr: { scheduled: string | null; estimated: string | null; actual: string | null },
+  delay: number,
+): string {
+  const term = ["cancelled", "canceled", "landed", "arrived", "diverted", "incident"];
+  if (term.includes(rawStatus)) return statusVi(rawStatus);
+
+  const now = Date.now();
+  const toMs = (v: string | null) => (v ? new Date(v).getTime() : NaN);
+  const depT = toMs(dep.actual) || toMs(dep.estimated) || toMs(dep.scheduled);
+  const arrT = toMs(arr.actual) || toMs(arr.estimated) || toMs(arr.scheduled);
+
+  if (dep.actual || rawStatus === "active" || rawStatus === "en-route" || rawStatus === "en_route") {
+    if (!Number.isNaN(arrT) && now >= arrT) return "Đã hạ cánh";
+    return "Đang bay";
+  }
+
+  if (!Number.isNaN(depT)) {
+    const diff = now - depT; // ms
+    if (diff >= 15 * 60_000) {
+      // 15 phút sau giờ đi (lịch hoặc dự kiến) → coi như đã khởi hành
+      if (!Number.isNaN(arrT) && now >= arrT) return "Đã hạ cánh";
+      return direction === "departure" ? "Đã khởi hành" : "Đang bay";
+    }
+    if (diff >= -15 * 60_000 && direction === "departure") {
+      // trong khoảng ±15' quanh giờ đi → cửa đã/đang đóng
+      return "Đã đóng cửa";
+    }
+  }
+
+  if (delay > 0) return `Trễ ${delay} phút`;
+  return statusVi(rawStatus || "scheduled");
 }
 
 function generateMock(iata: string, direction: Direction): FlightRow[] {
@@ -136,8 +183,13 @@ function mapAviationStack(rows: AviationStackFlight[], direction: Direction): Fl
   return rows.map((r) => {
     const side = direction === "departure" ? r.departure : r.arrival;
     const delay = side?.delay ?? 0;
-    const baseStatus = statusVi(r.flight_status);
-    const status = delay > 0 && r.flight_status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
+    const status = inferStatus(
+      r.flight_status ?? "scheduled",
+      direction,
+      { scheduled: r.departure?.scheduled ?? null, estimated: r.departure?.estimated ?? null, actual: r.departure?.actual ?? null },
+      { scheduled: r.arrival?.scheduled ?? null, estimated: r.arrival?.estimated ?? null, actual: r.arrival?.actual ?? null },
+      delay,
+    );
     return {
       flight_iata: r.flight?.iata ?? `${r.airline?.iata ?? ""}${r.flight?.number ?? ""}`,
       flight_number: r.flight?.number ?? "",
@@ -237,13 +289,20 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       ? toIso(r.dep_actual_utc, r.dep_actual)
       : toIso(r.arr_actual_utc, r.arr_actual);
     const delay = r.delayed ?? 0;
-    const baseStatus = statusVi(r.status ?? "scheduled");
-    const status = delay > 0 && r.status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
     const airlineIata = r.airline_iata ?? "";
     const depScheduled = toIso(r.dep_time_utc, r.dep_time);
     const depEstimated = toIso(r.dep_estimated_utc, r.dep_estimated);
+    const depActual = toIso(r.dep_actual_utc, r.dep_actual);
     const arrScheduled = toIso(r.arr_time_utc, r.arr_time);
     const arrEstimated = toIso(r.arr_estimated_utc, r.arr_estimated);
+    const arrActual = toIso(r.arr_actual_utc, r.arr_actual);
+    const status = inferStatus(
+      r.status ?? "scheduled",
+      direction,
+      { scheduled: depScheduled, estimated: depEstimated, actual: depActual },
+      { scheduled: arrScheduled, estimated: arrEstimated, actual: arrActual },
+      delay,
+    );
     return {
       flight_iata: r.flight_iata ?? `${airlineIata}${r.flight_number ?? ""}`,
       flight_number: r.flight_number ?? "",
