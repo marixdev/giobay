@@ -240,6 +240,10 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
     const baseStatus = statusVi(r.status ?? "scheduled");
     const status = delay > 0 && r.status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
     const airlineIata = r.airline_iata ?? "";
+    const depScheduled = toIso(r.dep_time_utc, r.dep_time);
+    const depEstimated = toIso(r.dep_estimated_utc, r.dep_estimated);
+    const arrScheduled = toIso(r.arr_time_utc, r.arr_time);
+    const arrEstimated = toIso(r.arr_estimated_utc, r.arr_estimated);
     return {
       flight_iata: r.flight_iata ?? `${airlineIata}${r.flight_number ?? ""}`,
       flight_number: r.flight_number ?? "",
@@ -250,6 +254,10 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       scheduled,
       estimated: estimated ?? scheduled,
       actual,
+      dep_scheduled: depScheduled,
+      dep_estimated: depEstimated ?? depScheduled,
+      arr_scheduled: arrScheduled,
+      arr_estimated: arrEstimated ?? arrScheduled,
       status,
       gate: (isDep ? r.dep_gate : r.arr_gate) ?? null,
       terminal: (isDep ? r.dep_terminal : r.arr_terminal) ?? null,
