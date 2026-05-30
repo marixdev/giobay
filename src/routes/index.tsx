@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Theo dõi lịch trình chuyến bay tại các sân bay Việt Nam theo thời gian thực." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(statsQO),
+  
   component: Home,
 });
 
