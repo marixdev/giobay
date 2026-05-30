@@ -47,14 +47,8 @@ function Home() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-        <div className="lg:col-span-3 space-y-8">
-          <Stat label="Chuyến bay hôm nay" value={stats.totalToday.toLocaleString("vi-VN")} />
-          <Stat label="Tỉ lệ đúng giờ" value={`${stats.avgOnTime}%`} />
-          <Stat label="Sân bay theo dõi" value={String(VN_AIRPORTS.length)} />
-        </div>
-
-        <div className="lg:col-span-9">
+      <section className="mb-16">
+        <div>
           <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground border-b border-border pb-2 mb-6">
             Chọn sân bay để xem bảng giờ
           </h2>
