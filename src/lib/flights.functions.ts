@@ -101,6 +101,12 @@ function inferStatus(
   return statusVi(rawStatus || "scheduled");
 }
 
+function computeFlightType(dep: string, arr: string): FlightType {
+  const isDepVN = !!findAirport(dep);
+  const isArrVN = !!findAirport(arr);
+  return isDepVN && isArrVN ? "domestic" : "international";
+}
+
 function generateMock(iata: string, direction: Direction): FlightRow[] {
   const airlines = [
     { iata: "VN", name: "Vietnam Airlines" },
