@@ -144,6 +144,104 @@ function mapAviationStack(rows: AviationStackFlight[], direction: Direction): Fl
   });
 }
 
+type AirLabsSchedule = {
+  airline_iata?: string;
+  airline_icao?: string;
+  flight_iata?: string;
+  flight_icao?: string;
+  flight_number?: string;
+  dep_iata?: string;
+  arr_iata?: string;
+  dep_terminal?: string | null;
+  dep_gate?: string | null;
+  arr_terminal?: string | null;
+  arr_gate?: string | null;
+  dep_time?: string | null;
+  dep_time_utc?: string | null;
+  dep_estimated?: string | null;
+  dep_estimated_utc?: string | null;
+  dep_actual?: string | null;
+  dep_actual_utc?: string | null;
+  arr_time?: string | null;
+  arr_time_utc?: string | null;
+  arr_estimated?: string | null;
+  arr_estimated_utc?: string | null;
+  arr_actual?: string | null;
+  arr_actual_utc?: string | null;
+  status?: string;
+  delayed?: number | null;
+};
+
+const AIRLINE_NAMES: Record<string, string> = {
+  VN: "Vietnam Airlines",
+  VJ: "Vietjet Air",
+  QH: "Bamboo Airways",
+  VU: "Vietravel Airlines",
+  BL: "Pacific Airlines",
+};
+
+function toIso(utc: string | null | undefined, local: string | null | undefined): string | null {
+  const v = utc || local;
+  if (!v) return null;
+  // AirLabs returns "YYYY-MM-DD HH:mm" (UTC when *_utc); convert to ISO.
+  const iso = v.includes("T") ? v : v.replace(" ", "T") + (utc ? "Z" : "");
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+async function fetchAirLabs(direction: Direction, iata: string): Promise<AirLabsSchedule[] | null> {
+  const key = process.env.AIRLABS_API_KEY;
+  if (!key) return null;
+  const url = new URL("https://airlabs.co/api/v9/schedules");
+  url.searchParams.set("api_key", key);
+  if (direction === "departure") url.searchParams.set("dep_iata", iata);
+  else url.searchParams.set("arr_iata", iata);
+  try {
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { response?: AirLabsSchedule[]; error?: unknown };
+    if (!json.response || json.error) return null;
+    return json.response;
+  } catch (e) {
+    console.error("AirLabs error", e);
+    return null;
+  }
+}
+
+function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] {
+  return rows.map((r) => {
+    const isDep = direction === "departure";
+    const scheduled = isDep
+      ? toIso(r.dep_time_utc, r.dep_time)
+      : toIso(r.arr_time_utc, r.arr_time);
+    const estimated = isDep
+      ? toIso(r.dep_estimated_utc, r.dep_estimated)
+      : toIso(r.arr_estimated_utc, r.arr_estimated);
+    const actual = isDep
+      ? toIso(r.dep_actual_utc, r.dep_actual)
+      : toIso(r.arr_actual_utc, r.arr_actual);
+    const delay = r.delayed ?? 0;
+    const baseStatus = statusVi(r.status ?? "scheduled");
+    const status = delay > 0 && r.status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
+    const airlineIata = r.airline_iata ?? "";
+    return {
+      flight_iata: r.flight_iata ?? `${airlineIata}${r.flight_number ?? ""}`,
+      flight_number: r.flight_number ?? "",
+      airline_name: AIRLINE_NAMES[airlineIata] ?? airlineIata ?? "—",
+      airline_iata: airlineIata,
+      dep_iata: r.dep_iata ?? "",
+      arr_iata: r.arr_iata ?? "",
+      scheduled,
+      estimated: estimated ?? scheduled,
+      actual,
+      status,
+      gate: (isDep ? r.dep_gate : r.arr_gate) ?? null,
+      terminal: (isDep ? r.dep_terminal : r.arr_terminal) ?? null,
+      delay_minutes: delay || null,
+    };
+  });
+}
+
 export const getFlights = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
@@ -154,19 +252,23 @@ export const getFlights = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const iata = data.airport.toUpperCase();
     const cacheKey = `flights:${iata}:${data.direction}`;
-    const cached = getCached<{ rows: FlightRow[]; source: "live" | "mock" }>(cacheKey);
+    const cached = getCached<{ rows: FlightRow[]; source: SourceTag }>(cacheKey);
     if (cached) return cached;
 
-    const params: Record<string, string> = {};
-    if (data.direction === "departure") params.dep_iata = iata;
-    else params.arr_iata = iata;
-
-    const live = await fetchAviationStack(params);
-    let result: { rows: FlightRow[]; source: "live" | "mock" };
-    if (live && live.length > 0) {
-      result = { rows: mapAviationStack(live, data.direction), source: "live" };
+    let result: { rows: FlightRow[]; source: SourceTag };
+    const airlabs = await fetchAirLabs(data.direction, iata);
+    if (airlabs && airlabs.length > 0) {
+      result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
     } else {
-      result = { rows: generateMock(iata, data.direction), source: "mock" };
+      const params: Record<string, string> = {};
+      if (data.direction === "departure") params.dep_iata = iata;
+      else params.arr_iata = iata;
+      const live = await fetchAviationStack(params);
+      if (live && live.length > 0) {
+        result = { rows: mapAviationStack(live, data.direction), source: "aviationstack" };
+      } else {
+        result = { rows: generateMock(iata, data.direction), source: "mock" };
+      }
     }
     setCached(cacheKey, result);
     return result;
