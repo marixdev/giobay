@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { VN_AIRPORTS, VN_BBOX } from "./airports";
+import { findAirport, VN_AIRPORTS, VN_BBOX } from "./airports";
 
 /** Server-side cache (per-worker, in-memory). */
 const cache = new Map<string, { at: number; data: unknown }>();
@@ -15,6 +15,8 @@ function getCached<T>(key: string): T | undefined {
 function setCached(key: string, data: unknown) {
   cache.set(key, { at: Date.now(), data });
 }
+
+export type FlightType = "domestic" | "international";
 
 export type FlightRow = {
   flight_iata: string;
@@ -34,6 +36,7 @@ export type FlightRow = {
   gate: string | null;
   terminal: string | null;
   delay_minutes: number | null;
+  type: FlightType;
 };
 
 type Direction = "departure" | "arrival";
@@ -98,6 +101,12 @@ function inferStatus(
   return statusVi(rawStatus || "scheduled");
 }
 
+function computeFlightType(dep: string, arr: string): FlightType {
+  const isDepVN = !!findAirport(dep);
+  const isArrVN = !!findAirport(arr);
+  return isDepVN && isArrVN ? "domestic" : "international";
+}
+
 function generateMock(iata: string, direction: Direction): FlightRow[] {
   const airlines = [
     { iata: "VN", name: "Vietnam Airlines" },
@@ -146,6 +155,7 @@ function generateMock(iata: string, direction: Direction): FlightRow[] {
       gate: cancelled ? null : ["A01", "B04", "C12", "D08", "G15"][i % 5],
       terminal: i % 2 === 0 ? "T1" : "T2",
       delay_minutes: delay || null,
+      type: computeFlightType(direction === "departure" ? iata : other.iata, direction === "departure" ? other.iata : iata),
     });
   }
   return rows;
@@ -208,6 +218,7 @@ function mapAviationStack(rows: AviationStackFlight[], direction: Direction): Fl
       gate: side?.gate ?? null,
       terminal: side?.terminal ?? null,
       delay_minutes: delay || null,
+      type: computeFlightType(r.departure?.iata ?? "", r.arrival?.iata ?? ""),
     };
   });
 }
@@ -321,6 +332,7 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       gate: (isDep ? r.dep_gate : r.arr_gate) ?? null,
       terminal: (isDep ? r.dep_terminal : r.arr_terminal) ?? null,
       delay_minutes: delay || null,
+      type: computeFlightType(r.dep_iata ?? "", r.arr_iata ?? ""),
     };
   });
 }

@@ -45,6 +45,7 @@ function AirportPage() {
   const { airport } = Route.useLoaderData();
   const [direction, setDirection] = useState<"departure" | "arrival">("departure");
   const [terminal, setTerminal] = useState<string>("ALL");
+  const [flightType, setFlightType] = useState<"ALL" | "domestic" | "international">("ALL");
   const { data, isFetching, refetch } = useSuspenseQuery(flightsQO(airport.iata, direction));
   const router = useRouter();
   // Re-trigger loader when params change
@@ -55,7 +56,11 @@ function AirportPage() {
   const terminals = Array.from(
     new Set(data.rows.map((r) => r.terminal).filter((t): t is string => !!t)),
   ).sort();
-  const filteredRows = terminal === "ALL" ? data.rows : data.rows.filter((r) => r.terminal === terminal);
+  const filteredRows = data.rows.filter((r) => {
+    if (terminal !== "ALL" && r.terminal !== terminal) return false;
+    if (flightType !== "ALL" && r.type !== flightType) return false;
+    return true;
+  });
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
@@ -123,6 +128,40 @@ function AirportPage() {
             {isFetching ? "Đang tải…" : "Làm mới"}
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-3 px-2">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Loại:</span>
+        <button
+          onClick={() => setFlightType("ALL")}
+          className={
+            flightType === "ALL"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Tất cả
+        </button>
+        <button
+          onClick={() => setFlightType("domestic")}
+          className={
+            flightType === "domestic"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Nội địa
+        </button>
+        <button
+          onClick={() => setFlightType("international")}
+          className={
+            flightType === "international"
+              ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
+              : "px-3 py-1 rounded-full border border-foreground/20 text-[11px] font-mono hover:bg-foreground/5"
+          }
+        >
+          Quốc tế
+        </button>
       </div>
 
       {terminals.length > 0 && (
