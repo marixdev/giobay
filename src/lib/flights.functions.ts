@@ -26,6 +26,10 @@ export type FlightRow = {
   scheduled: string | null;
   estimated: string | null;
   actual: string | null;
+  dep_scheduled: string | null;
+  dep_estimated: string | null;
+  arr_scheduled: string | null;
+  arr_estimated: string | null;
   status: string;
   gate: string | null;
   terminal: string | null;
@@ -63,7 +67,10 @@ function generateMock(iata: string, direction: Direction): FlightRow[] {
     const other = otherAirports[i % otherAirports.length];
     const minutesOffset = (i - 4) * 25;
     const sched = new Date(now + minutesOffset * 60_000);
+    const arrSched = new Date(sched.getTime() + (60 + (i % 4) * 20) * 60_000);
     const delay = i % 5 === 1 ? 25 : i % 7 === 0 ? 10 : 0;
+    const est = delay ? new Date(sched.getTime() + delay * 60_000) : sched;
+    const arrEst = delay ? new Date(arrSched.getTime() + delay * 60_000) : arrSched;
     const cancelled = i % 11 === 3;
     const status: string = cancelled
       ? "Hủy chuyến"
@@ -82,8 +89,12 @@ function generateMock(iata: string, direction: Direction): FlightRow[] {
       dep_iata: direction === "departure" ? iata : other.iata,
       arr_iata: direction === "departure" ? other.iata : iata,
       scheduled: sched.toISOString(),
-      estimated: delay ? new Date(sched.getTime() + delay * 60_000).toISOString() : sched.toISOString(),
+      estimated: est.toISOString(),
       actual: null,
+      dep_scheduled: (direction === "departure" ? sched : arrSched).toISOString(),
+      dep_estimated: (direction === "departure" ? est : arrEst).toISOString(),
+      arr_scheduled: (direction === "departure" ? arrSched : sched).toISOString(),
+      arr_estimated: (direction === "departure" ? arrEst : est).toISOString(),
       status,
       gate: cancelled ? null : ["A01", "B04", "C12", "D08", "G15"][i % 5],
       terminal: i % 2 === 0 ? "T1" : "T2",
@@ -137,6 +148,10 @@ function mapAviationStack(rows: AviationStackFlight[], direction: Direction): Fl
       scheduled: side?.scheduled ?? null,
       estimated: side?.estimated ?? null,
       actual: side?.actual ?? null,
+      dep_scheduled: r.departure?.scheduled ?? null,
+      dep_estimated: r.departure?.estimated ?? null,
+      arr_scheduled: r.arrival?.scheduled ?? null,
+      arr_estimated: r.arrival?.estimated ?? null,
       status,
       gate: side?.gate ?? null,
       terminal: side?.terminal ?? null,
@@ -225,6 +240,10 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
     const baseStatus = statusVi(r.status ?? "scheduled");
     const status = delay > 0 && r.status === "scheduled" ? `Trễ ${delay} phút` : baseStatus;
     const airlineIata = r.airline_iata ?? "";
+    const depScheduled = toIso(r.dep_time_utc, r.dep_time);
+    const depEstimated = toIso(r.dep_estimated_utc, r.dep_estimated);
+    const arrScheduled = toIso(r.arr_time_utc, r.arr_time);
+    const arrEstimated = toIso(r.arr_estimated_utc, r.arr_estimated);
     return {
       flight_iata: r.flight_iata ?? `${airlineIata}${r.flight_number ?? ""}`,
       flight_number: r.flight_number ?? "",
@@ -235,6 +254,10 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
       scheduled,
       estimated: estimated ?? scheduled,
       actual,
+      dep_scheduled: depScheduled,
+      dep_estimated: depEstimated ?? depScheduled,
+      arr_scheduled: arrScheduled,
+      arr_estimated: arrEstimated ?? arrScheduled,
       status,
       gate: (isDep ? r.dep_gate : r.arr_gate) ?? null,
       terminal: (isDep ? r.dep_terminal : r.arr_terminal) ?? null,
