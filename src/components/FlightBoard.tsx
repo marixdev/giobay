@@ -6,7 +6,12 @@ function fmtTime(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
 }
 
 function statusClass(status: string): string {
@@ -40,7 +45,8 @@ export function FlightBoard({
             <th className="py-4 px-2 font-medium">Chuyến bay</th>
             <th className="py-4 px-2 font-medium">Hãng</th>
             <th className="py-4 px-2 font-medium">{direction === "departure" ? "Điểm đến" : "Điểm đi"}</th>
-            <th className="py-4 px-2 font-medium">Giờ</th>
+            <th className="py-4 px-2 font-medium">Giờ đi</th>
+            <th className="py-4 px-2 font-medium">Giờ đến</th>
             <th className="py-4 px-2 font-medium">Trạng thái</th>
             <th className="py-4 px-2 font-medium text-right">Cửa</th>
           </tr>
@@ -62,12 +68,8 @@ export function FlightBoard({
                 </td>
                 <td className="py-4 px-2 text-muted-foreground">{r.airline_name}</td>
                 <td className="py-4 px-2">{other || "—"}</td>
-                <td className="py-4 px-2">
-                  {fmtTime(r.scheduled)}
-                  {delayed && (
-                    <span className="ml-2 text-xs text-accent italic">/ {fmtTime(r.estimated)}</span>
-                  )}
-                </td>
+                <TimeCell scheduled={r.dep_scheduled ?? r.scheduled} estimated={r.dep_estimated ?? r.estimated} delayed={delayed} />
+                <TimeCell scheduled={r.arr_scheduled} estimated={r.arr_estimated} delayed={delayed} />
                 <td className="py-4 px-2">
                   <span className={`text-[10px] uppercase tracking-wider border px-2 py-0.5 rounded-full ${statusClass(r.status)}`}>
                     {r.status}
@@ -80,5 +82,33 @@ export function FlightBoard({
         </tbody>
       </table>
     </div>
+  );
+}
+
+function TimeCell({
+  scheduled,
+  estimated,
+  delayed,
+}: {
+  scheduled: string | null;
+  estimated: string | null;
+  delayed: boolean;
+}) {
+  const showEstimated = delayed && estimated && estimated !== scheduled;
+  return (
+    <td className="py-4 px-2 whitespace-nowrap">
+      <div className="flex flex-col gap-0.5 leading-tight">
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[9px] uppercase tracking-wider text-muted-foreground">Lịch</span>
+          <span>{fmtTime(scheduled)}</span>
+        </span>
+        {showEstimated && (
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-[9px] uppercase tracking-wider text-accent">Dự kiến</span>
+            <span className="text-accent italic">{fmtTime(estimated)}</span>
+          </span>
+        )}
+      </div>
+    </td>
   );
 }
