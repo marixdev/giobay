@@ -178,7 +178,6 @@ function SiteHeader() {
           <NavItem to="/">Trang chủ</NavItem>
           <NavItem to="/airports/SGN">Sân bay</NavItem>
           <NavItem to="/map">Bản đồ</NavItem>
-          <NavItem to="/stats">Thống kê</NavItem>
         </nav>
       </div>
     </header>
