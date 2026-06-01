@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FlightsNumberRouteImport } from './routes/flights.$number'
@@ -18,6 +19,11 @@ import { Route as AirportsCodeRouteImport } from './routes/airports.$code'
 const StatsRoute = StatsRouteImport.update({
   id: '/stats',
   path: '/stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapRoute = MapRouteImport.update({
@@ -44,6 +50,7 @@ const AirportsCodeRoute = AirportsCodeRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/map': typeof MapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/map': typeof MapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
@@ -59,19 +67,33 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/map': typeof MapRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/map' | '/stats' | '/airports/$code' | '/flights/$number'
+  fullPaths:
+    | '/'
+    | '/map'
+    | '/sitemap.xml'
+    | '/stats'
+    | '/airports/$code'
+    | '/flights/$number'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/map' | '/stats' | '/airports/$code' | '/flights/$number'
+  to:
+    | '/'
+    | '/map'
+    | '/sitemap.xml'
+    | '/stats'
+    | '/airports/$code'
+    | '/flights/$number'
   id:
     | '__root__'
     | '/'
     | '/map'
+    | '/sitemap.xml'
     | '/stats'
     | '/airports/$code'
     | '/flights/$number'
@@ -80,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MapRoute: typeof MapRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   AirportsCodeRoute: typeof AirportsCodeRoute
   FlightsNumberRoute: typeof FlightsNumberRoute
@@ -92,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map': {
@@ -128,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MapRoute: MapRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   AirportsCodeRoute: AirportsCodeRoute,
   FlightsNumberRoute: FlightsNumberRoute,

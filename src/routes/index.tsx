@@ -7,11 +7,13 @@ import { VN_AIRPORTS } from "@/lib/airports";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Bay Live — Theo dõi chuyến bay sân bay Việt Nam" },
+      { title: "Giờ Bay Online — Theo dõi chuyến bay sân bay Việt Nam" },
       { name: "description", content: "Bảng giờ Đến/Đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho 19 sân bay Việt Nam." },
-      { property: "og:title", content: "Bay Live — FIDS sân bay Việt Nam" },
+      { property: "og:title", content: "Giờ Bay Online — FIDS sân bay Việt Nam" },
       { property: "og:description", content: "Theo dõi lịch trình chuyến bay tại các sân bay Việt Nam theo thời gian thực." },
+      { property: "og:url", content: "https://giobay.online/" },
     ],
+    links: [{ rel: "canonical", href: "https://giobay.online/" }],
   }),
   
   component: Home,

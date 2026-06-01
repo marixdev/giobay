@@ -85,19 +85,41 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bay Live — Theo dõi chuyến bay các sân bay Việt Nam" },
+      { title: "Giờ Bay Online — Theo dõi chuyến bay các sân bay Việt Nam" },
       { name: "description", content: "Bảng giờ đến/đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho các sân bay Việt Nam." },
-      { name: "author", content: "Bay Live" },
-      { property: "og:title", content: "Bay Live — Theo dõi chuyến bay sân bay Việt Nam" },
+      { name: "author", content: "Giờ Bay Online" },
+      { property: "og:title", content: "Giờ Bay Online — Theo dõi chuyến bay sân bay Việt Nam" },
       { property: "og:description", content: "FIDS trực tiếp cho SGN, HAN, DAD và toàn bộ sân bay Việt Nam." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { property: "og:site_name", content: "Giờ Bay Online" },
+      { property: "og:locale", content: "vi_VN" },
+      { name: "keywords", content: "giờ bay, lịch bay, chuyến bay Việt Nam, sân bay Tân Sơn Nhất, Nội Bài, Đà Nẵng, FIDS, theo dõi chuyến bay, bản đồ máy bay realtime, giobay.online" },
+      { name: "robots", content: "index, follow" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Giờ Bay Online",
+          alternateName: "GiờBay",
+          url: "https://giobay.online",
+          inLanguage: "vi-VN",
+          description: "Theo dõi chuyến bay trực tiếp tại các sân bay Việt Nam.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://giobay.online/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
       },
     ],
   }),
@@ -149,7 +171,7 @@ function SiteHeader() {
     <header className="border-b border-foreground/15 bg-background/80 backdrop-blur sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4 flex flex-wrap items-baseline justify-between gap-3 md:gap-4">
         <Link to="/" className="flex items-baseline gap-2">
-          <span className="font-display italic text-xl md:text-3xl leading-none">Bay Live</span>
+          <span className="font-display italic text-xl md:text-3xl leading-none">Giờ Bay Online</span>
           <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">VN · FIDS</span>
         </Link>
         <nav className="flex items-center gap-1 font-mono text-[10px] md:text-[11px] uppercase tracking-wider overflow-x-auto -mx-1 px-1 max-w-full">
@@ -179,7 +201,7 @@ function NavItem({ to, children }: { to: string; children: ReactNode }) {
 function SiteTicker() {
   const items = [
     "Dữ liệu cập nhật mỗi 60 giây",
-    "Bay Live theo dõi 19 sân bay dân dụng tại Việt Nam",
+    "Giờ Bay Online theo dõi 19 sân bay dân dụng tại Việt Nam",
     "Bấm vào số hiệu chuyến bay để xem chi tiết hành trình",
     "Bản đồ realtime hiển thị máy bay đang bay trong vùng FIR Hồ Chí Minh và Hà Nội",
   ];
