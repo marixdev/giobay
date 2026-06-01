@@ -1,6 +1,8 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
+import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 
 import { AirportChips } from "@/components/AirportChips";
 import { FlightBoard } from "@/components/FlightBoard";
@@ -8,15 +10,26 @@ import { FlightSearch } from "@/components/FlightSearch";
 import { findAirport } from "@/lib/airports";
 import { getFlights } from "@/lib/flights.functions";
 
+const REFRESH_MS = 45_000;
+
 const flightsQO = (airport: string, direction: "departure" | "arrival") =>
   queryOptions({
     queryKey: ["flights", airport, direction],
     queryFn: () => getFlights({ data: { airport, direction } }),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
+    staleTime: REFRESH_MS,
+    refetchInterval: REFRESH_MS,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
+const searchSchema = z.object({
+  dir: z.enum(["departure", "arrival"]).catch("departure"),
+  terminal: z.string().catch("ALL"),
+  type: z.enum(["ALL", "domestic", "international"]).catch("ALL"),
+});
+
 export const Route = createFileRoute("/airports/$code")({
+  validateSearch: zodValidator(searchSchema),
   head: ({ params }) => {
     const a = findAirport(params.code);
     const title = a ? `${a.name} (${a.iata}) — Lịch chuyến bay trực tiếp` : "Sân bay không tìm thấy";
@@ -43,15 +56,29 @@ export const Route = createFileRoute("/airports/$code")({
 
 function AirportPage() {
   const { airport } = Route.useLoaderData();
-  const [direction, setDirection] = useState<"departure" | "arrival">("departure");
-  const [terminal, setTerminal] = useState<string>("ALL");
-  const [flightType, setFlightType] = useState<"ALL" | "domestic" | "international">("ALL");
-  const { data, isFetching, refetch } = useSuspenseQuery(flightsQO(airport.iata, direction));
+  const { dir: direction, terminal, type: flightType } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  type SearchShape = { dir: "departure" | "arrival"; terminal: string; type: "ALL" | "domestic" | "international" };
+  const setSearch = (patch: Partial<SearchShape>) =>
+    navigate({ search: (prev: SearchShape) => ({ ...prev, ...patch }), replace: true });
+  const { data, isFetching, refetch, dataUpdatedAt } = useSuspenseQuery(
+    flightsQO(airport.iata, direction),
+  );
   const router = useRouter();
-  // Re-trigger loader when params change
   useEffect(() => {
     router.invalidate();
   }, [airport.iata, router]);
+
+  // Countdown to next auto-refresh
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const secondsLeft = Math.max(
+    0,
+    Math.ceil((dataUpdatedAt + REFRESH_MS - now) / 1000),
+  );
 
   const terminals = Array.from(
     new Set(data.rows.map((r) => r.terminal).filter((t): t is string => !!t)),
@@ -76,7 +103,7 @@ function AirportPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setDirection("departure")}
+              onClick={() => setSearch({ dir: "departure" })}
               className={
                 direction === "departure"
                   ? "px-4 py-1.5 rounded-full bg-foreground text-background text-sm font-medium"
@@ -86,7 +113,7 @@ function AirportPage() {
               Đi
             </button>
             <button
-              onClick={() => setDirection("arrival")}
+              onClick={() => setSearch({ dir: "arrival" })}
               className={
                 direction === "arrival"
                   ? "px-4 py-1.5 rounded-full bg-foreground text-background text-sm font-medium"
@@ -114,11 +141,16 @@ function AirportPage() {
         <div className="flex gap-4 items-center">
           <span className="text-[10px] font-mono text-accent">● TRỰC TIẾP</span>
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+            {isFetching ? "Đang làm mới…" : `Tự cập nhật sau ${secondsLeft}s`}
+          </span>
+          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
             {data.source === "airlabs"
               ? "Nguồn: AirLabs"
               : data.source === "aviationstack" || data.source === "live"
                 ? "Nguồn: AviationStack"
-                : "Nguồn: Dữ liệu mẫu"}
+                : data.source === "fr24"
+                  ? "Nguồn: FlightRadar24"
+                  : "Nguồn: Dữ liệu mẫu"}
           </span>
           <button
             onClick={() => refetch()}
@@ -133,7 +165,7 @@ function AirportPage() {
       <div className="flex flex-wrap items-center gap-2 mb-3 px-2">
         <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Loại:</span>
         <button
-          onClick={() => setFlightType("ALL")}
+          onClick={() => setSearch({ type: "ALL" })}
           className={
             flightType === "ALL"
               ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
@@ -143,7 +175,7 @@ function AirportPage() {
           Tất cả
         </button>
         <button
-          onClick={() => setFlightType("domestic")}
+          onClick={() => setSearch({ type: "domestic" })}
           className={
             flightType === "domestic"
               ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
@@ -153,7 +185,7 @@ function AirportPage() {
           Nội địa
         </button>
         <button
-          onClick={() => setFlightType("international")}
+          onClick={() => setSearch({ type: "international" })}
           className={
             flightType === "international"
               ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
@@ -168,7 +200,7 @@ function AirportPage() {
         <div className="flex flex-wrap items-center gap-2 mb-4 px-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mr-1">Nhà ga:</span>
           <button
-            onClick={() => setTerminal("ALL")}
+            onClick={() => setSearch({ terminal: "ALL" })}
             className={
               terminal === "ALL"
                 ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
@@ -180,7 +212,7 @@ function AirportPage() {
           {terminals.map((t) => (
             <button
               key={t}
-              onClick={() => setTerminal(t)}
+              onClick={() => setSearch({ terminal: t })}
               className={
                 terminal === t
                   ? "px-3 py-1 rounded-full bg-foreground text-background text-[11px] font-mono"
