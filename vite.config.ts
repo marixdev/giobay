@@ -19,14 +19,14 @@ export default defineConfig({
   },
   vite: {
     build: {
-      onLog(level, log, handler) {
-        // Vite 7 can report React library "use client" directives through
-        // onLog instead of Rollup's onwarn; these warnings are safe to ignore.
-        if (log.code === "MODULE_LEVEL_DIRECTIVE") return;
-        if (typeof log.message === "string" && log.message.includes('"use client"')) return;
-        handler(level, log);
-      },
       rollupOptions: {
+        onLog(level, log, handler) {
+          // Vite 7 can report React library "use client" directives through
+          // onLog instead of Rollup's onwarn; these warnings are safe to ignore.
+          if (log.code === "MODULE_LEVEL_DIRECTIVE") return;
+          if (typeof log.message === "string" && log.message.includes('"use client"')) return;
+          handler(level, log);
+        },
         onwarn(warning, defaultHandler) {
           // Suppress noisy "use client" directive warnings from React libs.
           if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
