@@ -38,7 +38,57 @@ export function FlightBoard({
     );
   }
   return (
-    <div className="overflow-x-auto">
+    <>
+    {/* Mobile: card list */}
+    <ul className="md:hidden divide-y divide-border border-t border-foreground">
+      {rows.map((r, i) => {
+        const other = direction === "departure" ? r.arr_iata : r.dep_iata;
+        const delayed = (r.delay_minutes ?? 0) > 0;
+        const depTime = fmtTime(r.dep_estimated ?? r.dep_scheduled ?? r.scheduled);
+        const arrTime = fmtTime(r.arr_estimated ?? r.arr_scheduled);
+        return (
+          <li
+            key={`m-${r.flight_iata}-${i}`}
+            className="py-3 px-1 animate-row-entry"
+            style={{ animationDelay: `${Math.min(i, 12) * 30}ms` }}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <Link
+                to="/flights/$number"
+                params={{ number: r.flight_iata }}
+                className="font-mono text-base font-semibold hover:text-accent"
+              >
+                {r.flight_iata}
+              </Link>
+              <span className={`text-[9px] uppercase tracking-wider border px-2 py-0.5 rounded-full ${statusClass(r.status)}`}>
+                {r.status}
+              </span>
+            </div>
+            <div className="mt-1 font-mono text-xs text-muted-foreground truncate">
+              {r.airline_name}
+            </div>
+            <div className="mt-2 flex items-baseline justify-between gap-2 font-mono text-sm">
+              <span className="flex items-baseline gap-1.5">
+                <span className={delayed ? "text-accent italic" : ""}>{depTime}</span>
+                <span className="text-muted-foreground">→</span>
+                <span className="font-semibold">{other || "—"}</span>
+                <span className={delayed ? "text-accent italic" : ""}>{arrTime}</span>
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                {r.type === "domestic" ? "Nội địa" : "Quốc tế"}
+              </span>
+            </div>
+            <div className="mt-1 flex justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span>Nhà ga: {r.terminal ?? "—"}</span>
+              <span>Cửa: {r.gate ?? "—"}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+
+    {/* Desktop: table */}
+    <div className="hidden md:block overflow-x-auto">
       <table className="w-full border-collapse border-t border-foreground">
         <thead>
           <tr className="text-left font-mono text-[10px] text-muted-foreground uppercase tracking-wider border-b border-border">
@@ -88,6 +138,7 @@ export function FlightBoard({
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 

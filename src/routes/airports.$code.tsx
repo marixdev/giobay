@@ -114,18 +114,18 @@ function AirportPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-      <header className="border-b border-foreground pb-6 mb-10">
-        <div className="flex flex-col md:flex-row justify-between items-baseline gap-6">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10">
+      <header className="border-b border-foreground pb-5 md:pb-6 mb-8 md:mb-10">
+        <div className="flex flex-col md:flex-row justify-between md:items-baseline gap-4 md:gap-6">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
               Sân bay · {airport.icao} · {airport.city}
             </p>
-            <h1 className="font-display italic text-4xl md:text-6xl leading-none mt-2">
+            <h1 className="font-display italic text-3xl md:text-6xl leading-tight md:leading-none mt-2 break-words">
               {airport.name} <span className="text-accent">{airport.iata}</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button
               onClick={() => setSearch({ dir: "departure" })}
               className={
@@ -150,7 +150,7 @@ function AirportPage() {
         </div>
       </header>
 
-      <div className="mb-10">
+      <div className="mb-6 md:mb-10 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
         <AirportChips active={airport.iata} />
       </div>
 
@@ -158,11 +158,11 @@ function AirportPage() {
         <FlightSearch />
       </div>
 
-      <div className="flex items-center justify-between mb-4 px-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4 px-2">
         <h2 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
           {direction === "departure" ? "Chuyến bay khởi hành" : "Chuyến bay đến"}
         </h2>
-        <div className="flex gap-4 items-center">
+        <div className="flex flex-wrap gap-2 md:gap-4 items-center">
           <span className="text-[10px] font-mono text-accent">● TRỰC TIẾP</span>
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
             {isFetching ? "Đang làm mới…" : `Tự cập nhật sau ${secondsLeft}s`}
