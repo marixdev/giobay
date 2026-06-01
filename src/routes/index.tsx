@@ -30,8 +30,7 @@ function Home() {
         </h1>
         <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground text-pretty">
           Bảng giờ Đến/Đi, tra cứu chuyến bay theo số hiệu, bản đồ vị trí máy bay realtime
-          trong vùng FIR Việt Nam — dữ liệu trực tiếp từ AviationStack &amp; OpenSky Network,
-          cập nhật mỗi 60 giây.
+          trong vùng FIR Việt Nam — cập nhật mỗi 60 giây.
         </p>
         <div className="mt-8">
           <FlightSearch />
