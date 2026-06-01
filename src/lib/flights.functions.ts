@@ -352,10 +352,14 @@ export const getFlights = createServerFn({ method: "GET" })
     if (cached) return cached;
 
     let result: { rows: FlightRow[]; source: SourceTag };
-    const airlabs = await fetchAirLabs(data.direction, iata);
-    if (airlabs && airlabs.length > 0) {
-      result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
+    const fr24 = await fetchFR24(iata, data.direction);
+    if (fr24 && fr24.length > 0) {
+      result = { rows: fr24, source: "fr24" };
     } else {
+      const airlabs = await fetchAirLabs(data.direction, iata);
+      if (airlabs && airlabs.length > 0) {
+        result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
+      } else {
       const params: Record<string, string> = {};
       if (data.direction === "departure") params.dep_iata = iata;
       else params.arr_iata = iata;
@@ -364,6 +368,7 @@ export const getFlights = createServerFn({ method: "GET" })
         result = { rows: mapAviationStack(live, data.direction), source: "aviationstack" };
       } else {
         result = { rows: generateMock(iata, data.direction), source: "mock" };
+      }
       }
     }
     setCached(cacheKey, result);
