@@ -543,29 +543,39 @@ export const searchFlight = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const q = data.query.replace(/\s+/g, "").toUpperCase();
     const cacheKey = `search:${q}`;
-    const cached = getCached<{ rows: FlightRow[]; source: "live" | "mock" }>(cacheKey);
+    const cached = getCached<{ rows: FlightRow[]; source: SourceTag }>(cacheKey);
     if (cached) return cached;
 
-    const live = await fetchAviationStack({ flight_iata: q });
-    let result: { rows: FlightRow[]; source: "live" | "mock" };
-    if (live && live.length > 0) {
-      result = { rows: mapAviationStack(live, "departure"), source: "live" };
-    } else {
-      // Mock: return one synthetic row matching the query
-      const airlineCode = q.slice(0, 2);
-      const num = q.slice(2);
-      const mock = generateMock("SGN", "departure")[0];
-      result = {
-        rows: [{
-          ...mock,
-          flight_iata: q,
-          flight_number: num,
-          airline_iata: airlineCode,
-          airline_name: AIRLINE_NAMES[airlineCode] ?? airlineCode,
-        }],
-        source: "mock",
-      };
+    let result: { rows: FlightRow[]; source: SourceTag } | null = null;
+
+    // 1) FR24 flight lookup by flight number — most reliable, no key required.
+    const fr24 = await fetchFR24Flight(q);
+    if (fr24 && fr24.length > 0) {
+      result = { rows: fr24, source: "fr24" };
     }
+
+    // 2) AirLabs /flight endpoint (single in-air flight) — falls back to schedules.
+    if (!result) {
+      const airlabs = await fetchAirLabsFlight(q);
+      if (airlabs && airlabs.length > 0) {
+        result = { rows: mapAirLabs(airlabs, "departure"), source: "airlabs" };
+      }
+    }
+
+    // 3) AviationStack last (most rate-limited).
+    if (!result) {
+      const live = await fetchAviationStack({ flight_iata: q });
+      if (live && live.length > 0) {
+        result = { rows: mapAviationStack(live, "departure"), source: "aviationstack" };
+      }
+    }
+
+    if (!result) {
+      // No real data found — return empty so the page shows "not found"
+      // instead of fabricating a Vietnam Airlines mock entry.
+      result = { rows: [], source: "mock" };
+    }
+
     setCached(cacheKey, result);
     return result;
   });
