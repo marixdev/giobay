@@ -285,7 +285,7 @@ const AIRLINE_NAMES: Record<string, string> = {
   FD: "Thai AirAsia",
   D7: "AirAsia X",
   TR: "Scoot",
-  3K: "Jetstar Asia",
+  "3K": "Jetstar Asia",
   QF: "Qantas",
   EK: "Emirates",
   QR: "Qatar Airways",
