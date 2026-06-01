@@ -1,13 +1,14 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, notFound, useNavigate, useRouter } from "@tanstack/react-router";
 import { zodValidator } from "@tanstack/zod-adapter";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { AirportChips } from "@/components/AirportChips";
 import { FlightBoard } from "@/components/FlightBoard";
 import { FlightSearch } from "@/components/FlightSearch";
 import { findAirport } from "@/lib/airports";
+import { diffAndNotify, type FlightSnapshot } from "@/lib/flight-alerts";
 import { getFlights } from "@/lib/flights.functions";
 
 const REFRESH_MS = 45_000;
@@ -68,6 +69,29 @@ function AirportPage() {
   useEffect(() => {
     router.invalidate();
   }, [airport.iata, router]);
+
+  // Alerts: detect gate/time/status changes between auto-refresh cycles.
+  const ALERTS_KEY = "bay-live:alerts-enabled";
+  const [alertsOn, setAlertsOn] = useState(true);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const v = window.localStorage.getItem(ALERTS_KEY);
+    if (v === "0") setAlertsOn(false);
+  }, []);
+  const prevSnap = useRef<Map<string, FlightSnapshot>>(new Map());
+  const lastKey = useRef<string>("");
+  // Reset baseline when scope changes (airport or direction).
+  useEffect(() => {
+    const k = `${airport.iata}:${direction}`;
+    if (lastKey.current !== k) {
+      lastKey.current = k;
+      prevSnap.current = new Map();
+    }
+  }, [airport.iata, direction]);
+  useEffect(() => {
+    const isFirst = prevSnap.current.size === 0;
+    diffAndNotify(data.rows, prevSnap.current, { silent: isFirst || !alertsOn });
+  }, [dataUpdatedAt, data.rows, alertsOn]);
 
   // Countdown to next auto-refresh
   const [now, setNow] = useState(() => Date.now());
@@ -152,6 +176,23 @@ function AirportPage() {
                   ? "Nguồn: FlightRadar24"
                   : "Nguồn: Dữ liệu mẫu"}
           </span>
+          <button
+            onClick={() => {
+              const next = !alertsOn;
+              setAlertsOn(next);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem(ALERTS_KEY, next ? "1" : "0");
+              }
+            }}
+            title="Bật/tắt thông báo thay đổi cửa, giờ, trạng thái"
+            className={
+              alertsOn
+                ? "text-[10px] font-mono uppercase tracking-wider text-accent hover:opacity-80"
+                : "text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground"
+            }
+          >
+            {alertsOn ? "🔔 Cảnh báo: BẬT" : "🔕 Cảnh báo: TẮT"}
+          </button>
           <button
             onClick={() => refetch()}
             disabled={isFetching}
