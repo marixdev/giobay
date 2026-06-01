@@ -411,8 +411,10 @@ async function fetchFR24(iata: string, direction: Direction): Promise<FlightRow[
       const num = f.identification?.number?.default ?? "";
       const flightIata = num || `${airlineIata}${f.identification?.callsign ?? ""}`;
       if (!flightIata) continue;
-      const depIata = f.airport?.origin?.code?.iata ?? "";
-      const arrIata = f.airport?.destination?.code?.iata ?? "";
+      const originCode = f.airport?.origin?.code as { iata?: string | null; icao?: string | null } | undefined;
+      const destCode = f.airport?.destination?.code as { iata?: string | null; icao?: string | null } | undefined;
+      const depIata = originCode?.iata ?? originCode?.icao ?? "";
+      const arrIata = destCode?.iata ?? destCode?.icao ?? "";
       const depScheduled = unixToIso(f.time?.scheduled?.departure);
       const depEstimated = unixToIso(f.time?.estimated?.departure);
       const depActual = unixToIso(f.time?.real?.departure);
