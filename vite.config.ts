@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Force Nitro on with the Node preset so `bun run build` produces a
+  // standalone Node server at `.output/server/index.mjs` for VPS + pm2.
+  nitro: {
+    preset: "node-server",
+  },
 });
