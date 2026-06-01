@@ -40,7 +40,7 @@ export type FlightRow = {
 };
 
 type Direction = "departure" | "arrival";
-type SourceTag = "airlabs" | "aviationstack" | "live" | "mock";
+type SourceTag = "fr24" | "airlabs" | "aviationstack" | "live" | "mock";
 
 function statusVi(s: string): string {
   const m: Record<string, string> = {
@@ -338,6 +338,118 @@ function mapAirLabs(rows: AirLabsSchedule[], direction: Direction): FlightRow[] 
   });
 }
 
+type FR24Item = {
+  flight?: {
+    identification?: { number?: { default?: string | null }; callsign?: string | null };
+    airline?: { code?: { iata?: string | null }; name?: string | null };
+    airport?: {
+      origin?: { code?: { iata?: string | null }; info?: { terminal?: string | null; gate?: string | null } } | null;
+      destination?: { code?: { iata?: string | null }; info?: { terminal?: string | null; gate?: string | null } } | null;
+    };
+    time?: {
+      scheduled?: { departure?: number | null; arrival?: number | null } | null;
+      estimated?: { departure?: number | null; arrival?: number | null } | null;
+      real?: { departure?: number | null; arrival?: number | null } | null;
+    };
+    status?: { text?: string | null; type?: string | null; generic?: { status?: { text?: string | null; type?: string | null } | null } | null };
+  };
+};
+
+function fr24StatusToRaw(s: FR24Item["flight"] extends infer F ? (F extends { status?: infer S } ? S : never) : never): string {
+  if (!s) return "scheduled";
+  const t = (s.generic?.status?.type ?? s.type ?? "").toLowerCase();
+  if (t.includes("cancel")) return "cancelled";
+  if (t.includes("landed") || t.includes("arrived")) return "landed";
+  if (t.includes("departed") || t.includes("active") || t.includes("live") || t.includes("en route") || t.includes("en-route")) return "active";
+  if (t.includes("diverted")) return "diverted";
+  return "scheduled";
+}
+
+function unixToIso(s: number | null | undefined): string | null {
+  if (!s) return null;
+  const d = new Date(s * 1000);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+async function fetchFR24(iata: string, direction: Direction): Promise<FlightRow[] | null> {
+  const mode = direction === "departure" ? "departures" : "arrivals";
+  const url =
+    `https://api.flightradar24.com/common/v1/airport.json?code=${iata}` +
+    `&plugin[]=schedule&plugin-setting[schedule][mode]=${mode}` +
+    `&plugin-setting[schedule][timestamp]=${Math.floor(Date.now() / 1000)}` +
+    `&page=1&limit=100`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      result?: { response?: { airport?: { pluginData?: { schedule?: Record<string, { data?: FR24Item[] }> } } } };
+    };
+    const data = json?.result?.response?.airport?.pluginData?.schedule?.[mode]?.data;
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const rows: FlightRow[] = [];
+    for (const it of data) {
+      const f = it.flight;
+      if (!f) continue;
+      const airlineIata = f.airline?.code?.iata ?? "";
+      const num = f.identification?.number?.default ?? "";
+      const flightIata = num || `${airlineIata}${f.identification?.callsign ?? ""}`;
+      if (!flightIata) continue;
+      const depIata = f.airport?.origin?.code?.iata ?? "";
+      const arrIata = f.airport?.destination?.code?.iata ?? "";
+      const depScheduled = unixToIso(f.time?.scheduled?.departure);
+      const depEstimated = unixToIso(f.time?.estimated?.departure);
+      const depActual = unixToIso(f.time?.real?.departure);
+      const arrScheduled = unixToIso(f.time?.scheduled?.arrival);
+      const arrEstimated = unixToIso(f.time?.estimated?.arrival);
+      const arrActual = unixToIso(f.time?.real?.arrival);
+      const rawStatus = fr24StatusToRaw(f.status as never);
+      const sched = depScheduled ? new Date(depScheduled).getTime() : NaN;
+      const est = depEstimated ? new Date(depEstimated).getTime() : NaN;
+      const delay = !Number.isNaN(sched) && !Number.isNaN(est) ? Math.max(0, Math.round((est - sched) / 60_000)) : 0;
+      const status = inferStatus(
+        rawStatus,
+        direction,
+        { scheduled: depScheduled, estimated: depEstimated, actual: depActual },
+        { scheduled: arrScheduled, estimated: arrEstimated, actual: arrActual },
+        delay,
+      );
+      const isDep = direction === "departure";
+      const sideInfo = isDep ? f.airport?.origin?.info : f.airport?.destination?.info;
+      rows.push({
+        flight_iata: flightIata,
+        flight_number: num.replace(/^[A-Z]{2}/i, ""),
+        airline_name: f.airline?.name ?? AIRLINE_NAMES[airlineIata] ?? airlineIata ?? "—",
+        airline_iata: airlineIata,
+        dep_iata: depIata,
+        arr_iata: arrIata,
+        scheduled: isDep ? depScheduled : arrScheduled,
+        estimated: (isDep ? depEstimated : arrEstimated) ?? (isDep ? depScheduled : arrScheduled),
+        actual: isDep ? depActual : arrActual,
+        dep_scheduled: depScheduled,
+        dep_estimated: depEstimated ?? depScheduled,
+        arr_scheduled: arrScheduled,
+        arr_estimated: arrEstimated ?? arrScheduled,
+        status,
+        gate: sideInfo?.gate ?? null,
+        terminal: sideInfo?.terminal ?? null,
+        delay_minutes: delay || null,
+        type: computeFlightType(depIata, arrIata),
+      });
+    }
+    return rows;
+  } catch (e) {
+    console.error("FR24 error", e);
+    return null;
+  }
+}
+
 export const getFlights = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
@@ -352,10 +464,14 @@ export const getFlights = createServerFn({ method: "GET" })
     if (cached) return cached;
 
     let result: { rows: FlightRow[]; source: SourceTag };
-    const airlabs = await fetchAirLabs(data.direction, iata);
-    if (airlabs && airlabs.length > 0) {
-      result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
+    const fr24 = await fetchFR24(iata, data.direction);
+    if (fr24 && fr24.length > 0) {
+      result = { rows: fr24, source: "fr24" };
     } else {
+      const airlabs = await fetchAirLabs(data.direction, iata);
+      if (airlabs && airlabs.length > 0) {
+        result = { rows: mapAirLabs(airlabs, data.direction), source: "airlabs" };
+      } else {
       const params: Record<string, string> = {};
       if (data.direction === "departure") params.dep_iata = iata;
       else params.arr_iata = iata;
@@ -364,6 +480,7 @@ export const getFlights = createServerFn({ method: "GET" })
         result = { rows: mapAviationStack(live, data.direction), source: "aviationstack" };
       } else {
         result = { rows: generateMock(iata, data.direction), source: "mock" };
+      }
       }
     }
     setCached(cacheKey, result);
