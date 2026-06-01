@@ -84,9 +84,8 @@ function LiveMap({ aircraft }: { aircraft: Array<{ icao24: string; callsign: str
     });
 
   return (
-    <RL.MapContainer center={[15.5, 107]} zoom={6} style={{ height: "100%", width: "100%" }}>
+    <RL.MapContainer center={[15.5, 107]} zoom={6} style={{ height: "100%", width: "100%" }} attributionControl={false}>
       <RL.TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {aircraft.map((a) => (
