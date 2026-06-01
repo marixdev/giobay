@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "@/components/ui/sonner";
 import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/700.css";
 import "@fontsource/jetbrains-mono/400.css";
@@ -128,6 +129,7 @@ function RootComponent() {
       <SiteShell>
         <Outlet />
       </SiteShell>
+      <Toaster position="top-right" richColors closeButton />
     </QueryClientProvider>
   );
 }
