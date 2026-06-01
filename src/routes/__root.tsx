@@ -189,7 +189,7 @@ function NavItem({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link
       to={to}
-      className="px-3 py-1.5 rounded-full hover:bg-foreground/5 transition-colors"
+      className="px-3 py-1.5 rounded-full hover:bg-accent/20 hover:text-accent transition-colors"
       activeProps={{ className: "px-3 py-1.5 rounded-full bg-foreground text-background" }}
       activeOptions={{ exact: to === "/" }}
     >
