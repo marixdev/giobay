@@ -9,18 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FlightsNumberRouteImport } from './routes/flights.$number'
 import { Route as AirportsCodeRouteImport } from './routes/airports.$code'
 
-const StatsRoute = StatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -51,7 +45,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
 }
@@ -59,7 +52,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
 }
@@ -68,7 +60,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/map': typeof MapRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/stats': typeof StatsRoute
   '/airports/$code': typeof AirportsCodeRoute
   '/flights/$number': typeof FlightsNumberRoute
 }
@@ -78,23 +69,15 @@ export interface FileRouteTypes {
     | '/'
     | '/map'
     | '/sitemap.xml'
-    | '/stats'
     | '/airports/$code'
     | '/flights/$number'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/map'
-    | '/sitemap.xml'
-    | '/stats'
-    | '/airports/$code'
-    | '/flights/$number'
+  to: '/' | '/map' | '/sitemap.xml' | '/airports/$code' | '/flights/$number'
   id:
     | '__root__'
     | '/'
     | '/map'
     | '/sitemap.xml'
-    | '/stats'
     | '/airports/$code'
     | '/flights/$number'
   fileRoutesById: FileRoutesById
@@ -103,20 +86,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MapRoute: typeof MapRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  StatsRoute: typeof StatsRoute
   AirportsCodeRoute: typeof AirportsCodeRoute
   FlightsNumberRoute: typeof FlightsNumberRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/stats': {
-      id: '/stats'
-      path: '/stats'
-      fullPath: '/stats'
-      preLoaderRoute: typeof StatsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -159,7 +134,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MapRoute: MapRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  StatsRoute: StatsRoute,
   AirportsCodeRoute: AirportsCodeRoute,
   FlightsNumberRoute: FlightsNumberRoute,
 }

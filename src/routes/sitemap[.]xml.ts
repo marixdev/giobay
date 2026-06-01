@@ -13,7 +13,6 @@ export const Route = createFileRoute("/sitemap.xml")({
         const entries: Array<{ path: string; changefreq: string; priority: string }> = [
           { path: "/", changefreq: "hourly", priority: "1.0" },
           { path: "/map", changefreq: "hourly", priority: "0.9" },
-          { path: "/stats", changefreq: "daily", priority: "0.7" },
         ];
         for (const a of VN_AIRPORTS) {
           entries.push({ path: `/airports/${a.iata}`, changefreq: "hourly", priority: "0.8" });
