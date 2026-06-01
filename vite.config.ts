@@ -12,19 +12,21 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Force Nitro on with the Node preset so `bun run build` produces a
-  // standalone Node server at `.output/server/index.mjs` for VPS + pm2.
+  // Force Nitro on with the Node preset so production builds still emit the
+  // expected `dist/` folder while producing a VPS-runnable Node server.
   nitro: {
     preset: "node-server",
-    output: {
-      dir: ".output",
-      serverDir: ".output/server",
-      publicDir: ".output/public",
-    },
   },
   vite: {
     build: {
       rollupOptions: {
+        onLog(level, log, handler) {
+          // Vite 7 can report React library "use client" directives through
+          // onLog instead of Rollup's onwarn; these warnings are safe to ignore.
+          if (log.code === "MODULE_LEVEL_DIRECTIVE") return;
+          if (typeof log.message === "string" && log.message.includes('"use client"')) return;
+          handler(level, log);
+        },
         onwarn(warning, defaultHandler) {
           // Suppress noisy "use client" directive warnings from React libs.
           if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
