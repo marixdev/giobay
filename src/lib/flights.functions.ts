@@ -543,32 +543,169 @@ export const searchFlight = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const q = data.query.replace(/\s+/g, "").toUpperCase();
     const cacheKey = `search:${q}`;
-    const cached = getCached<{ rows: FlightRow[]; source: "live" | "mock" }>(cacheKey);
+    const cached = getCached<{ rows: FlightRow[]; source: SourceTag }>(cacheKey);
     if (cached) return cached;
 
-    const live = await fetchAviationStack({ flight_iata: q });
-    let result: { rows: FlightRow[]; source: "live" | "mock" };
-    if (live && live.length > 0) {
-      result = { rows: mapAviationStack(live, "departure"), source: "live" };
-    } else {
-      // Mock: return one synthetic row matching the query
-      const airlineCode = q.slice(0, 2);
-      const num = q.slice(2);
-      const mock = generateMock("SGN", "departure")[0];
-      result = {
-        rows: [{
-          ...mock,
-          flight_iata: q,
-          flight_number: num,
-          airline_iata: airlineCode,
-          airline_name: AIRLINE_NAMES[airlineCode] ?? airlineCode,
-        }],
-        source: "mock",
-      };
+    let result: { rows: FlightRow[]; source: SourceTag } | null = null;
+
+    // 1) FR24 flight lookup by flight number — most reliable, no key required.
+    const fr24 = await fetchFR24Flight(q);
+    if (fr24 && fr24.length > 0) {
+      result = { rows: fr24, source: "fr24" };
     }
+
+    // 2) AirLabs /flight endpoint (single in-air flight) — falls back to schedules.
+    if (!result) {
+      const airlabs = await fetchAirLabsFlight(q);
+      if (airlabs && airlabs.length > 0) {
+        result = { rows: mapAirLabs(airlabs, "departure"), source: "airlabs" };
+      }
+    }
+
+    // 3) AviationStack last (most rate-limited).
+    if (!result) {
+      const live = await fetchAviationStack({ flight_iata: q });
+      if (live && live.length > 0) {
+        result = { rows: mapAviationStack(live, "departure"), source: "aviationstack" };
+      }
+    }
+
+    if (!result) {
+      // No real data found — return empty so the page shows "not found"
+      // instead of fabricating a Vietnam Airlines mock entry.
+      result = { rows: [], source: "mock" };
+    }
+
     setCached(cacheKey, result);
     return result;
   });
+
+/**
+ * FR24 flight lookup by flight IATA (e.g. "MH759"). Returns up to a few of the
+ * most recent legs (today/yesterday). We pick the freshest one so the detail
+ * page reflects the live status of the current flight.
+ */
+type FR24FlightListItem = {
+  identification?: { number?: { default?: string | null }; callsign?: string | null };
+  airline?: { code?: { iata?: string | null }; name?: string | null };
+  airport?: {
+    origin?: { code?: { iata?: string | null; icao?: string | null }; info?: { terminal?: string | null; gate?: string | null } } | null;
+    destination?: { code?: { iata?: string | null; icao?: string | null }; info?: { terminal?: string | null; gate?: string | null } } | null;
+  };
+  time?: {
+    scheduled?: { departure?: number | null; arrival?: number | null } | null;
+    estimated?: { departure?: number | null; arrival?: number | null } | null;
+    real?: { departure?: number | null; arrival?: number | null } | null;
+  };
+  status?: { text?: string | null; type?: string | null; generic?: { status?: { text?: string | null; type?: string | null } | null } | null };
+};
+
+async function fetchFR24Flight(query: string): Promise<FlightRow[] | null> {
+  const url =
+    `https://api.flightradar24.com/common/v1/flight/list.json?query=${encodeURIComponent(query)}` +
+    `&fetchBy=flight&page=1&limit=25`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      result?: { response?: { data?: FR24FlightListItem[] | null } };
+    };
+    const data = json?.result?.response?.data;
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    // Pick freshest item: prefer one with real departure, else with the
+    // largest scheduled-departure timestamp closest to "now".
+    const now = Math.floor(Date.now() / 1000);
+    const scored = data
+      .map((f) => {
+        const s = f.time?.scheduled?.departure ?? 0;
+        const r = f.time?.real?.departure ?? 0;
+        const anchor = r || s;
+        return { f, score: anchor ? -Math.abs(anchor - now) : -Infinity };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const rows: FlightRow[] = [];
+    for (const { f } of scored) {
+      const airlineIata = f.airline?.code?.iata ?? "";
+      const num = f.identification?.number?.default ?? "";
+      const flightIata = num || `${airlineIata}${f.identification?.callsign ?? ""}`;
+      if (!flightIata) continue;
+      const originCode = f.airport?.origin?.code;
+      const destCode = f.airport?.destination?.code;
+      const depIata = (originCode?.iata || originCode?.icao || "").toUpperCase();
+      const arrIata = (destCode?.iata || destCode?.icao || "").toUpperCase();
+      const depScheduled = unixToIso(f.time?.scheduled?.departure);
+      const depEstimated = unixToIso(f.time?.estimated?.departure);
+      const depActual = unixToIso(f.time?.real?.departure);
+      const arrScheduled = unixToIso(f.time?.scheduled?.arrival);
+      const arrEstimated = unixToIso(f.time?.estimated?.arrival);
+      const arrActual = unixToIso(f.time?.real?.arrival);
+      const rawStatus = fr24StatusToRaw(f.status as never);
+      const sched = depScheduled ? new Date(depScheduled).getTime() : NaN;
+      const est = depEstimated ? new Date(depEstimated).getTime() : NaN;
+      const delay = !Number.isNaN(sched) && !Number.isNaN(est) ? Math.max(0, Math.round((est - sched) / 60_000)) : 0;
+      const status = inferStatus(
+        rawStatus,
+        "departure",
+        { scheduled: depScheduled, estimated: depEstimated, actual: depActual },
+        { scheduled: arrScheduled, estimated: arrEstimated, actual: arrActual },
+        delay,
+      );
+      rows.push({
+        flight_iata: flightIata,
+        flight_number: num.replace(/^[A-Z]{2}/i, ""),
+        airline_name: f.airline?.name ?? AIRLINE_NAMES[airlineIata] ?? airlineIata ?? "—",
+        airline_iata: airlineIata,
+        dep_iata: depIata,
+        arr_iata: arrIata,
+        scheduled: depScheduled,
+        estimated: depEstimated ?? depScheduled,
+        actual: depActual,
+        dep_scheduled: depScheduled,
+        dep_estimated: depEstimated ?? depScheduled,
+        arr_scheduled: arrScheduled,
+        arr_estimated: arrEstimated ?? arrScheduled,
+        status,
+        gate: f.airport?.origin?.info?.gate ?? null,
+        terminal: f.airport?.origin?.info?.terminal ?? null,
+        delay_minutes: delay || null,
+        type: computeFlightType(depIata, arrIata),
+      });
+      if (rows.length >= 1) break; // Detail page only needs the freshest leg.
+    }
+    return rows.length > 0 ? rows : null;
+  } catch (e) {
+    console.error("FR24 flight lookup error", e);
+    return null;
+  }
+}
+
+/** AirLabs schedules lookup by flight_iata. */
+async function fetchAirLabsFlight(query: string): Promise<AirLabsSchedule[] | null> {
+  const key = process.env.AIRLABS_API_KEY;
+  if (!key) return null;
+  const url = new URL("https://airlabs.co/api/v9/schedules");
+  url.searchParams.set("api_key", key);
+  url.searchParams.set("flight_iata", query);
+  try {
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(12_000) });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { response?: AirLabsSchedule[]; error?: unknown };
+    if (!json.response || json.error) return null;
+    return json.response;
+  } catch (e) {
+    console.error("AirLabs flight lookup error", e);
+    return null;
+  }
+}
 
 export type LiveAircraft = {
   icao24: string;
