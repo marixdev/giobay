@@ -40,7 +40,7 @@ export type FlightRow = {
 };
 
 type Direction = "departure" | "arrival";
-type SourceTag = "airlabs" | "aviationstack" | "live" | "mock";
+type SourceTag = "fr24" | "airlabs" | "aviationstack" | "live" | "mock";
 
 function statusVi(s: string): string {
   const m: Record<string, string> = {
