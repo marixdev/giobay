@@ -22,4 +22,16 @@ export default defineConfig({
       publicDir: ".output/public",
     },
   },
+  vite: {
+    build: {
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          // Suppress noisy "use client" directive warnings from React libs.
+          if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+          if (typeof warning.message === "string" && warning.message.includes('"use client"')) return;
+          defaultHandler(warning);
+        },
+      },
+    },
+  },
 });
