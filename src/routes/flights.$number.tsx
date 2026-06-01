@@ -1,7 +1,9 @@
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
-import { searchFlight } from "@/lib/flights.functions";
+import { searchFlight, getLiveAircraft } from "@/lib/flights.functions";
+import type { LiveAircraft } from "@/lib/flights.functions";
 
 const flightQO = (q: string) =>
   queryOptions({
@@ -10,6 +12,13 @@ const flightQO = (q: string) =>
     staleTime: 60_000,
   });
 
+const liveQO = queryOptions({
+  queryKey: ["live"],
+  queryFn: () => getLiveAircraft(),
+  staleTime: 30_000,
+  refetchInterval: 30_000,
+});
+
 export const Route = createFileRoute("/flights/$number")({
   head: ({ params }) => ({
     meta: [
@@ -17,8 +26,10 @@ export const Route = createFileRoute("/flights/$number")({
       { name: "description", content: `Thông tin chi tiết chuyến bay ${params.number}: lộ trình, giờ bay, trạng thái.` },
     ],
   }),
-  loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(flightQO(params.number.toUpperCase())),
+  loader: async ({ params, context }) => {
+    await context.queryClient.ensureQueryData(flightQO(params.number.toUpperCase()));
+    await context.queryClient.ensureQueryData(liveQO);
+  },
   component: FlightPage,
 });
 
@@ -82,9 +93,90 @@ function FlightPage() {
         </div>
       </dl>
 
-      <p className="mt-12 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        Nguồn: {data.source === "live" ? "AviationStack" : "Dữ liệu mẫu"}
-      </p>
+      <FlightLiveMap flightNumber={f.flight_iata} />
     </div>
+  );
+}
+
+function FlightLiveMap({ flightNumber }: { flightNumber: string }) {
+  const { data: live } = useSuspenseQuery(liveQO);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const normalized = flightNumber.replace(/\s+/g, "").toUpperCase();
+  const ac = live.aircraft.find(
+    (a) => a.callsign?.replace(/\s+/g, "").toUpperCase() === normalized
+  );
+
+  if (!ac) return null;
+
+  return (
+    <div className="mt-10">
+      <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-3">
+        Vị trí trực tiếp
+      </p>
+      <div className="border border-foreground/20 rounded overflow-hidden" style={{ height: "50vh", minHeight: 280 }}>
+        {mounted ? <FlightMapLeaflet aircraft={ac} /> : (
+          <div className="w-full h-full grid place-items-center font-mono text-xs text-muted-foreground">
+            Đang khởi tạo bản đồ…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FlightMapLeaflet({ aircraft }: { aircraft: LiveAircraft }) {
+  const [mods, setMods] = useState<null | { L: typeof import("leaflet"); RL: typeof import("react-leaflet") }>(null);
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      import("leaflet"),
+      import("react-leaflet"),
+      import("leaflet/dist/leaflet.css" as string),
+    ]).then(([L, RL]) => {
+      if (!cancelled) setMods({ L, RL });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  if (!mods) {
+    return (
+      <div className="w-full h-full grid place-items-center font-mono text-xs text-muted-foreground">
+        Đang tải bản đồ…
+      </div>
+    );
+  }
+
+  const { L, RL } = mods;
+
+  const planeIcon = (heading: number) =>
+    L.divIcon({
+      className: "plane-marker",
+      html: `<div style="transform: rotate(${heading}deg); font-size: 18px; line-height: 1;">✈</div>`,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+
+  return (
+    <RL.MapContainer
+      center={[aircraft.lat, aircraft.lon]}
+      zoom={8}
+      style={{ height: "100%", width: "100%" }}
+    >
+      <RL.TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <RL.Marker position={[aircraft.lat, aircraft.lon]} icon={planeIcon(aircraft.heading ?? 0)}>
+        <RL.Popup>
+          <div style={{ fontFamily: "monospace", fontSize: 12 }}>
+            <strong>{aircraft.callsign ?? aircraft.icao24}</strong>
+            <br />Alt: {aircraft.alt_m ? Math.round(aircraft.alt_m) + " m" : "—"}
+            <br />Hướng: {aircraft.heading != null ? Math.round(aircraft.heading) + "°" : "—"}
+          </div>
+        </RL.Popup>
+      </RL.Marker>
+    </RL.MapContainer>
   );
 }
