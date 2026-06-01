@@ -88,14 +88,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Giờ Bay Online — Theo dõi chuyến bay các sân bay Việt Nam" },
       { name: "description", content: "Bảng giờ đến/đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho các sân bay Việt Nam." },
       { name: "author", content: "Giờ Bay Online" },
-      { property: "og:title", content: "Giờ Bay Online — Theo dõi chuyến bay sân bay Việt Nam" },
-      { property: "og:description", content: "FIDS trực tiếp cho SGN, HAN, DAD và toàn bộ sân bay Việt Nam." },
+      { property: "og:title", content: "Giờ Bay Online — Theo dõi chuyến bay các sân bay Việt Nam" },
+      { property: "og:description", content: "Bảng giờ đến/đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho các sân bay Việt Nam." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { property: "og:site_name", content: "Giờ Bay Online" },
       { property: "og:locale", content: "vi_VN" },
       { name: "keywords", content: "giờ bay, lịch bay, chuyến bay Việt Nam, sân bay Tân Sơn Nhất, Nội Bài, Đà Nẵng, FIDS, theo dõi chuyến bay, bản đồ máy bay realtime, giobay.online" },
       { name: "robots", content: "index, follow" },
+      { name: "twitter:title", content: "Giờ Bay Online — Theo dõi chuyến bay các sân bay Việt Nam" },
+      { name: "twitter:description", content: "Bảng giờ đến/đi trực tiếp, tìm kiếm chuyến bay, bản đồ máy bay realtime cho các sân bay Việt Nam." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b40728d4-3015-46cd-8501-113a1fb3404e/id-preview-88f36856--8e29bea1-df18-4c6e-953d-1ffce36153d8.lovable.app-1780296947952.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b40728d4-3015-46cd-8501-113a1fb3404e/id-preview-88f36856--8e29bea1-df18-4c6e-953d-1ffce36153d8.lovable.app-1780296947952.png" },
     ],
     links: [
       {
@@ -172,11 +176,13 @@ function SiteHeader() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 md:py-4 flex flex-wrap items-baseline justify-between gap-3 md:gap-4">
         <Link to="/" className="flex items-baseline gap-2">
           <span className="font-display italic text-xl md:text-3xl leading-none">Giờ Bay Online</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">VN · FIDS</span>
         </Link>
         <nav className="flex items-center gap-1 font-mono text-[10px] md:text-[11px] uppercase tracking-wider overflow-x-auto -mx-1 px-1 max-w-full">
           <NavItem to="/">Trang chủ</NavItem>
           <NavItem to="/airports/SGN">Sân bay</NavItem>
           <NavItem to="/map">Bản đồ</NavItem>
+          <NavItem to="/stats">Thống kê</NavItem>
         </nav>
       </div>
     </header>
