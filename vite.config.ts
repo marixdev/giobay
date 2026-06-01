@@ -6,17 +6,16 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Only override Nitro preset when explicitly building for a Node VPS target.
+// Lovable preview/published run on Cloudflare workerd (the plugin default),
+// so forcing `node-server` here breaks the hosted preview with a 500.
+const isNodeBuild = process.env.BUILD_TARGET === "node";
+
 export default defineConfig({
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Force Nitro on with the Node preset so production builds still emit the
-  // expected `dist/` folder while producing a VPS-runnable Node server.
-  nitro: {
-    preset: "node-server",
-  },
+  ...(isNodeBuild ? { nitro: { preset: "node-server" } } : {}),
   vite: {
     build: {
       rollupOptions: {
