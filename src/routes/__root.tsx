@@ -92,12 +92,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "FIDS trực tiếp cho SGN, HAN, DAD và toàn bộ sân bay Việt Nam." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { property: "og:site_name", content: "Giờ Bay Online" },
+      { property: "og:locale", content: "vi_VN" },
+      { name: "keywords", content: "giờ bay, lịch bay, chuyến bay Việt Nam, sân bay Tân Sơn Nhất, Nội Bài, Đà Nẵng, FIDS, theo dõi chuyến bay, bản đồ máy bay realtime, giobay.online" },
+      { name: "robots", content: "index, follow" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Giờ Bay Online",
+          alternateName: "GiờBay",
+          url: "https://giobay.online",
+          inLanguage: "vi-VN",
+          description: "Theo dõi chuyến bay trực tiếp tại các sân bay Việt Nam.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://giobay.online/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }),
       },
     ],
   }),
