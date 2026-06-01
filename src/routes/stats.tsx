@@ -24,10 +24,10 @@ export const Route = createFileRoute("/stats")({
 function StatsPage() {
   const { data } = useSuspenseQuery(statsQO);
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-      <header className="border-b border-foreground pb-6 mb-10">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10">
+      <header className="border-b border-foreground pb-5 md:pb-6 mb-8 md:mb-10">
         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Thống kê</p>
-        <h1 className="font-display italic text-4xl md:text-6xl mt-2">
+        <h1 className="font-display italic text-3xl md:text-6xl mt-2">
           Hoạt động <span className="text-accent">hôm nay</span>
         </h1>
       </header>

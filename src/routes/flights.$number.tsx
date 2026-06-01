@@ -37,7 +37,14 @@ function fmt(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" });
+  return d.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Ho_Chi_Minh",
+  });
 }
 
 function FlightPage() {
@@ -54,22 +61,22 @@ function FlightPage() {
     );
   }
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12">
       <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
         Chuyến bay · {f.airline_name}
       </p>
-      <h1 className="font-display italic text-5xl md:text-7xl mt-2">{f.flight_iata}</h1>
+      <h1 className="font-display italic text-4xl md:text-7xl mt-2 break-words">{f.flight_iata}</h1>
 
-      <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-y border-foreground py-10">
+      <div className="mt-8 md:mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-center border-y border-foreground py-8 md:py-10">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Khởi hành</p>
-          <p className="font-display italic text-5xl mt-1">{f.dep_iata || "—"}</p>
+          <p className="font-display italic text-4xl md:text-5xl mt-1">{f.dep_iata || "—"}</p>
           <p className="font-mono text-sm mt-2">{fmt(f.scheduled)}</p>
         </div>
         <div className="text-center text-accent font-mono text-xs uppercase tracking-[0.3em]">───── ✈ ─────</div>
         <div className="md:text-right">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Điểm đến</p>
-          <p className="font-display italic text-5xl mt-1">{f.arr_iata || "—"}</p>
+          <p className="font-display italic text-4xl md:text-5xl mt-1">{f.arr_iata || "—"}</p>
           <p className="font-mono text-sm mt-2">{fmt(f.estimated ?? f.scheduled)}</p>
         </div>
       </div>
@@ -163,9 +170,9 @@ function FlightMapLeaflet({ aircraft }: { aircraft: LiveAircraft }) {
       center={[aircraft.lat, aircraft.lon]}
       zoom={8}
       style={{ height: "100%", width: "100%" }}
+      attributionControl={false}
     >
       <RL.TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <RL.Marker position={[aircraft.lat, aircraft.lon]} icon={planeIcon(aircraft.heading ?? 0)}>

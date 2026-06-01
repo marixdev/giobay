@@ -19,20 +19,20 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-      <section className="border-b border-foreground pb-12 mb-12">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+      <section className="border-b border-foreground pb-8 md:pb-12 mb-8 md:mb-12">
         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground mb-4">
           Vietnam National Flight Terminal
         </p>
-        <h1 className="font-display italic text-5xl md:text-7xl leading-[1.05] tracking-tight text-balance">
+        <h1 className="font-display italic text-4xl md:text-7xl leading-[1.05] tracking-tight text-balance">
           Theo dõi chuyến bay <span className="text-accent">trực tiếp</span><br />
           tại các sân bay Việt Nam.
         </h1>
-        <p className="mt-6 max-w-2xl text-base md:text-lg text-muted-foreground text-pretty">
+        <p className="mt-5 md:mt-6 max-w-2xl text-sm md:text-lg text-muted-foreground text-pretty">
           Bảng giờ Đến/Đi, tra cứu chuyến bay theo số hiệu, bản đồ vị trí máy bay realtime
           trong vùng FIR Việt Nam — cập nhật mỗi 60 giây.
         </p>
-        <div className="mt-8">
+        <div className="mt-6 md:mt-8">
           <FlightSearch />
         </div>
       </section>

@@ -28,10 +28,10 @@ function MapPage() {
   useEffect(() => setMounted(true), []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-      <header className="border-b border-foreground pb-6 mb-8">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-10">
+      <header className="border-b border-foreground pb-5 md:pb-6 mb-6 md:mb-8">
         <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Bản đồ trực tuyến</p>
-        <h1 className="font-display italic text-4xl md:text-6xl mt-2">
+        <h1 className="font-display italic text-3xl md:text-6xl mt-2">
           Không phận <span className="text-accent">Việt Nam</span>
         </h1>
         <p className="mt-3 font-mono text-xs text-muted-foreground">
@@ -39,7 +39,7 @@ function MapPage() {
         </p>
       </header>
 
-      <div className="border border-foreground/20 rounded overflow-hidden" style={{ height: "70vh" }}>
+      <div className="border border-foreground/20 rounded overflow-hidden h-[60vh] md:h-[70vh]">
         {mounted ? <LiveMap aircraft={data.aircraft} /> : (
           <div className="w-full h-full grid place-items-center font-mono text-xs text-muted-foreground">
             Đang khởi tạo bản đồ…
@@ -84,9 +84,8 @@ function LiveMap({ aircraft }: { aircraft: Array<{ icao24: string; callsign: str
     });
 
   return (
-    <RL.MapContainer center={[15.5, 107]} zoom={6} style={{ height: "100%", width: "100%" }}>
+    <RL.MapContainer center={[15.5, 107]} zoom={6} style={{ height: "100%", width: "100%" }} attributionControl={false}>
       <RL.TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {aircraft.map((a) => (
