@@ -267,6 +267,37 @@ const AIRLINE_NAMES: Record<string, string> = {
   QH: "Bamboo Airways",
   VU: "Vietravel Airlines",
   BL: "Pacific Airlines",
+  MH: "Malaysia Airlines",
+  SQ: "Singapore Airlines",
+  TG: "Thai Airways",
+  CX: "Cathay Pacific",
+  KE: "Korean Air",
+  OZ: "Asiana Airlines",
+  JL: "Japan Airlines",
+  NH: "All Nippon Airways",
+  CI: "China Airlines",
+  BR: "EVA Air",
+  CA: "Air China",
+  CZ: "China Southern",
+  MU: "China Eastern",
+  HX: "Hong Kong Airlines",
+  AK: "AirAsia",
+  FD: "Thai AirAsia",
+  D7: "AirAsia X",
+  TR: "Scoot",
+  "3K": "Jetstar Asia",
+  QF: "Qantas",
+  EK: "Emirates",
+  QR: "Qatar Airways",
+  EY: "Etihad Airways",
+  TK: "Turkish Airlines",
+  AF: "Air France",
+  KL: "KLM",
+  LH: "Lufthansa",
+  BA: "British Airways",
+  AA: "American Airlines",
+  UA: "United Airlines",
+  DL: "Delta Air Lines",
 };
 
 
@@ -525,7 +556,13 @@ export const searchFlight = createServerFn({ method: "GET" })
       const num = q.slice(2);
       const mock = generateMock("SGN", "departure")[0];
       result = {
-        rows: [{ ...mock, flight_iata: q, flight_number: num, airline_iata: airlineCode }],
+        rows: [{
+          ...mock,
+          flight_iata: q,
+          flight_number: num,
+          airline_iata: airlineCode,
+          airline_name: AIRLINE_NAMES[airlineCode] ?? airlineCode,
+        }],
         source: "mock",
       };
     }
