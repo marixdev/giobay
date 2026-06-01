@@ -102,9 +102,19 @@ function inferStatus(
 }
 
 function computeFlightType(dep: string, arr: string): FlightType {
-  const isDepVN = !!findAirport(dep);
-  const isArrVN = !!findAirport(arr);
-  return isDepVN && isArrVN ? "domestic" : "international";
+  // Robust: check by IATA/ICAO via findAirport, plus ICAO prefix "VV" which
+  // covers Vietnamese aerodromes not listed in VN_AIRPORTS.
+  const isVN = (code: string) => {
+    if (!code) return false;
+    const c = code.toUpperCase();
+    if (findAirport(c)) return true;
+    if (c.length === 4 && c.startsWith("VV")) return true;
+    return false;
+  };
+  // Unknown both sides → treat as domestic to avoid false "Quốc tế" labels
+  // when an upstream source omits airport codes.
+  if (!dep && !arr) return "domestic";
+  return isVN(dep) && isVN(arr) ? "domestic" : "international";
 }
 
 function generateMock(iata: string, direction: Direction): FlightRow[] {
