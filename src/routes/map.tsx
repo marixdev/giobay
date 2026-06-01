@@ -15,7 +15,7 @@ export const Route = createFileRoute("/map")({
   head: () => ({
     meta: [
       { title: "Bản đồ máy bay realtime — Bay Live" },
-      { name: "description", content: "Vị trí máy bay đang bay trong vùng FIR Việt Nam, cập nhật trực tiếp từ OpenSky Network." },
+      { name: "description", content: "Vị trí máy bay đang bay trong vùng FIR Việt Nam, cập nhật theo thời gian thực." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(liveQO),
@@ -35,7 +35,7 @@ function MapPage() {
           Không phận <span className="text-accent">Việt Nam</span>
         </h1>
         <p className="mt-3 font-mono text-xs text-muted-foreground">
-          {data.aircraft.length} máy bay đang được theo dõi · Nguồn: {data.source === "live" ? "OpenSky Network" : "Dữ liệu mẫu"}
+          {data.aircraft.length} máy bay đang được theo dõi
         </p>
       </header>
 

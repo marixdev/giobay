@@ -178,7 +178,7 @@ function NavItem({ to, children }: { to: string; children: ReactNode }) {
 
 function SiteTicker() {
   const items = [
-    "Dữ liệu cập nhật mỗi 60 giây từ AviationStack và OpenSky Network",
+    "Dữ liệu cập nhật mỗi 60 giây",
     "Bay Live theo dõi 19 sân bay dân dụng tại Việt Nam",
     "Bấm vào số hiệu chuyến bay để xem chi tiết hành trình",
     "Bản đồ realtime hiển thị máy bay đang bay trong vùng FIR Hồ Chí Minh và Hà Nội",
