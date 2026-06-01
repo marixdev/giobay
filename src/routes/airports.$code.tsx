@@ -167,15 +167,6 @@ function AirportPage() {
           <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
             {isFetching ? "Đang làm mới…" : `Tự cập nhật sau ${secondsLeft}s`}
           </span>
-          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-            {data.source === "airlabs"
-              ? "Nguồn: AirLabs"
-              : data.source === "aviationstack" || data.source === "live"
-                ? "Nguồn: AviationStack"
-                : data.source === "fr24"
-                  ? "Nguồn: FlightRadar24"
-                  : "Nguồn: Dữ liệu mẫu"}
-          </span>
           <button
             onClick={() => {
               const next = !alertsOn;
