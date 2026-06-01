@@ -16,5 +16,10 @@ export default defineConfig({
   // standalone Node server at `.output/server/index.mjs` for VPS + pm2.
   nitro: {
     preset: "node-server",
+    output: {
+      dir: ".output",
+      serverDir: ".output/server",
+      publicDir: ".output/public",
+    },
   },
 });
