@@ -36,7 +36,7 @@ export const Route = createFileRoute("/airports/$code")({
     const title = a ? `${a.name} (${a.iata}) — Lịch chuyến bay trực tiếp` : "Sân bay không tìm thấy";
     const desc = a
       ? `Bảng giờ chuyến bay Đến/Đi tại sân bay ${a.name} (${a.iata}) — ${a.city}. Cập nhật trực tiếp.`
-      : "Bay Live — sân bay không tìm thấy.";
+      : "Giờ Bay Online — sân bay không tìm thấy.";
     return {
       meta: [
         { title },

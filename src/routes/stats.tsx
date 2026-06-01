@@ -13,7 +13,7 @@ const statsQO = queryOptions({
 export const Route = createFileRoute("/stats")({
   head: () => ({
     meta: [
-      { title: "Thống kê chuyến bay — Bay Live" },
+      { title: "Thống kê chuyến bay — Giờ Bay Online" },
       { name: "description", content: "Số chuyến bay, tỉ lệ đúng giờ và top tuyến bay các sân bay Việt Nam." },
     ],
   }),

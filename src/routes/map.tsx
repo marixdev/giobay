@@ -14,7 +14,7 @@ const liveQO = queryOptions({
 export const Route = createFileRoute("/map")({
   head: () => ({
     meta: [
-      { title: "Bản đồ máy bay realtime — Bay Live" },
+      { title: "Bản đồ máy bay realtime — Giờ Bay Online" },
       { name: "description", content: "Vị trí máy bay đang bay trong vùng FIR Việt Nam, cập nhật theo thời gian thực." },
     ],
   }),

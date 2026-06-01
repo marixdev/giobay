@@ -22,7 +22,7 @@ const liveQO = queryOptions({
 export const Route = createFileRoute("/flights/$number")({
   head: ({ params }) => ({
     meta: [
-      { title: `Chuyến bay ${params.number} — Bay Live` },
+      { title: `Chuyến bay ${params.number} — Giờ Bay Online` },
       { name: "description", content: `Thông tin chi tiết chuyến bay ${params.number}: lộ trình, giờ bay, trạng thái.` },
     ],
   }),
