@@ -416,8 +416,13 @@ async function fetchFR24(iata: string, direction: Direction): Promise<FlightRow[
       // FR24 thường trả "" (chuỗi rỗng) thay vì null cho iata thiếu —
       // dùng `||` để fallback sang icao, nếu không computeFlightType nhận
       // toàn bộ chuyến bay là "Quốc tế" (cả hai mã đều rỗng).
-      const depIata = (originCode?.iata || originCode?.icao || "").toUpperCase();
-      const arrIata = (destCode?.iata || destCode?.icao || "").toUpperCase();
+      // Thêm fallback cuối cùng về sân bay đang query: khi FR24 trả về danh
+      // sách departures/arrivals cho một sân bay, đôi khi side của chính sân
+      // bay đó bị bỏ trống → khiến mọi chuyến bay bị gán nhầm "Quốc tế".
+      const depIata =
+        (originCode?.iata || originCode?.icao || (direction === "departure" ? iata : "")).toUpperCase();
+      const arrIata =
+        (destCode?.iata || destCode?.icao || (direction === "arrival" ? iata : "")).toUpperCase();
       const depScheduled = unixToIso(f.time?.scheduled?.departure);
       const depEstimated = unixToIso(f.time?.estimated?.departure);
       const depActual = unixToIso(f.time?.real?.departure);
