@@ -58,8 +58,9 @@ function AirportPage() {
   const { airport } = Route.useLoaderData();
   const { dir: direction, terminal, type: flightType } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const setSearch = (patch: Partial<{ dir: "departure" | "arrival"; terminal: string; type: "ALL" | "domestic" | "international" }>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+  type SearchShape = { dir: "departure" | "arrival"; terminal: string; type: "ALL" | "domestic" | "international" };
+  const setSearch = (patch: Partial<SearchShape>) =>
+    navigate({ search: (prev: SearchShape) => ({ ...prev, ...patch }), replace: true });
   const { data, isFetching, refetch, dataUpdatedAt } = useSuspenseQuery(
     flightsQO(airport.iata, direction),
   );
